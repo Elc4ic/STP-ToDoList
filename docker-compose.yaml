@@ -1,0 +1,57 @@
+services:
+  lab3:
+    container_name: todo-server
+    image: todo-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - pgadmin
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=coursedb
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - todo-data:/var/lib/test/data
+    networks: [ microservices ]
+
+  db:
+    container_name: db
+    image: postgres:13
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: coursedb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [ microservices ]
+
+  pgadmin:
+    container_name: pgadmin4
+    image: dpage/pgadmin4:7
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks: [ microservices ]
+
+volumes:
+  todo-data:
+  db-data:
+  pgadmin-data:
+
+networks:
+  microservices:
+    driver: bridge

@@ -1,0 +1,4 @@
+package enums
+
+class CachedState {
+}

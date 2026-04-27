@@ -1,0 +1,4 @@
+package apiRoutes
+
+class Api {
+}
