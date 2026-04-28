@@ -16,6 +16,8 @@ exposed = "0.50.1"
 h2 = "2.2.224"
 r2dbc-h2 = "1.0.0.RELEASE"
 postgresql = "42.7.3"
+jbcrypt = "0.4"
+hikaricp = "7.0.2"
 
 #shared
 logback = "1.5.21"
@@ -24,6 +26,7 @@ koin = "3.5.6"
 [libraries]
 # android
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -55,6 +58,7 @@ exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 h2database-h2 = { module = "com.h2database:h2", version.ref = "h2" }
 h2database-r2dbc = { module = "io.r2dbc:r2dbc-h2", version.ref = "r2dbc-h2" }
+jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
 
 # shared
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }

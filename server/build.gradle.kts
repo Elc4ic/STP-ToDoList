@@ -34,6 +34,8 @@ dependencies {
     implementation(libs.insert.koin.koinLoggerSlf4j)
     implementation(libs.logback.classic)
     implementation(libs.postgresql)
+    implementation(libs.jbcrypt)
+    implementation(libs.hikaricp)
     implementation(project(":shared"))
 
     testImplementation(kotlin("test"))
