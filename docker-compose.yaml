@@ -11,11 +11,9 @@ services:
       - db
       - pgadmin
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_DATABASE=coursedb
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - POSTGRES_URL=jdbc:postgresql://localhost:5432/todolist_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - todo-data:/var/lib/test/data
     networks: [ microservices ]
