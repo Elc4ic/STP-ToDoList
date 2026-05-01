@@ -14,7 +14,7 @@ import org.koin.ktor.ext.inject
 fun Route.authRoutes() {
     val userService by inject<UserService>()
 
-    post(Api.Auth.LOGIN) {
+    post(Api.Auth.Login.path) {
         val request = call.receive<AuthRequest>()
         val response = userService.authenticate(request)
 

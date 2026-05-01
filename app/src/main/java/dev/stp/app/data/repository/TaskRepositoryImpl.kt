@@ -5,6 +5,7 @@ import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.data.mapper.toDbModel
 import dev.stp.app.data.mapper.toEntity
 import dev.stp.app.domain.entity.Task
+import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -12,7 +13,8 @@ import kotlinx.coroutines.flow.map
 
 
 class TaskRepositoryImpl(
-    private val taskDao: TaskDao
+    private val taskDao: TaskDao,
+    private val syncRepository: SyncRepository
 ) : TaskRepository {
 
     override suspend fun addTask(
@@ -32,6 +34,7 @@ class TaskRepositoryImpl(
                 deadline = deadline
             )
         )
+        syncRepository.trySync()
     }
 
     override suspend fun deleteTask(taskId: Int) {
@@ -45,6 +48,12 @@ class TaskRepositoryImpl(
 
     override fun getAllTasks(): Flow<List<Task>> {
         return taskDao.getAllTask().map {
+            it.toEntity()
+        }
+    }
+
+    override suspend fun getAllNotSyncTasks(): List<Task> {
+        return taskDao.getAllNotSyncTask().map {
             it.toEntity()
         }
     }

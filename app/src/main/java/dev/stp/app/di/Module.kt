@@ -3,7 +3,10 @@ package dev.stp.app.di
 import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDataBase
 import androidx.room.Room
+import dev.stp.app.data.datasource.TokenManager
+import dev.stp.app.data.repository.SyncRepositoryImpl
 import dev.stp.app.data.repository.TaskRepositoryImpl
+import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.usecases.AddTaskUseCase
 import dev.stp.app.domain.usecases.DeleteTaskUseCase
@@ -13,6 +16,16 @@ import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.first
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -34,12 +47,14 @@ val dataModule = module {
         get<TaskDataBase>().taskDao()
     }
 
+    single<SyncRepository> { SyncRepositoryImpl(androidContext()) }
+
     single<TaskRepository> {
         TaskRepositoryImpl(
-            taskDao = get()
+            taskDao = get(),
+            syncRepository = get()
         )
     }
-
 }
 val domainModule = module {
 
@@ -85,7 +100,7 @@ val domainModule = module {
 
 
 }
-val viewModelModule = module{
+val viewModelModule = module {
 
     viewModel {
         TaskViewModel(
@@ -100,9 +115,25 @@ val viewModelModule = module{
             addTaskUseCase = get()
         )
     }
+}
 
+val networkModule = module {
+    single {
+        HttpClient(Android) {
+            install(ContentNegotiation) {
+                json()
+            }
+            install(Logging) { level = LogLevel.BODY }
 
-
-
-
+            install(Auth) {
+                bearer {
+                    loadTokens {
+                        val token = get<TokenManager>().token.first()
+                        token?.let { BearerTokens(it, "") }
+                    }
+                }
+            }
+        }
+    }
+    single { TokenManager(androidContext()) }
 }

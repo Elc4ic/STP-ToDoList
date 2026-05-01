@@ -7,4 +7,5 @@ data class Task(
     val isPinned: Boolean = false,
     val createdAt: Long,
     val deadline: Long,
+    val syncStatus: String
 )

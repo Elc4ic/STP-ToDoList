@@ -14,6 +14,9 @@ interface TaskDao {
     @Transaction
     @Query("SELECT * FROM tasks ORDER BY createdAt DESC")
      fun getAllTask() : Flow<List<TaskDbModel>>
+
+    @Query("SELECT * FROM tasks WHERE syncStatus != 'SYNCHRONIZED'")
+    suspend fun getAllNotSyncTask() : List<TaskDbModel>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: TaskDbModel)
 
