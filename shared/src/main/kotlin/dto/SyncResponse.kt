@@ -8,7 +8,6 @@ data class SyncResponse(
 )
 @Serializable
 data class SyncTaskResponse(
-    val localId: Int,
-    val remoteId: String?,
+    val id: String?,
     val status: String
 )

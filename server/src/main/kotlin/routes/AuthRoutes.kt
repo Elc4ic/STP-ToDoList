@@ -27,7 +27,7 @@ fun Route.authRoutes() {
         }
     }
 
-    post("/auth/refresh") {
+    post(Api.Auth.Refresh.path) {
         val refreshToken = call.receive<String>()
         val response = userService.refresh(refreshToken)
 

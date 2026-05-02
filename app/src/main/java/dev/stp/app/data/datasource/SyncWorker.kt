@@ -9,14 +9,13 @@ import dev.stp.app.domain.repository.TaskRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import kotlinx.coroutines.flow.map
 
 class SyncWorker(
-    appContext: Context,
+    context: Context,
     workerParams: WorkerParameters,
     private val repository: TaskRepository,
     private val client: HttpClient
-) : CoroutineWorker(appContext, workerParams) {
+) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
 

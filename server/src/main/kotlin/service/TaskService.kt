@@ -31,15 +31,14 @@ class TaskServiceImpl(
                     "PENDING_DELETE" -> taskRepository.delete(userId, dto)
                     "PENDING_UPDATE" -> taskRepository.update(userId, dto)
                     "PENDING_INSERT" -> taskRepository.insert(userId, dto)
-                    else -> dto.remoteId
+                    else -> dto.id
                 }
                 SyncTaskResponse(
-                    localId = dto.id,
-                    remoteId = remoteId,
+                    id = dto.id,
                     status = ResultCode.SUCCESS.toString()
                 )
             } catch (e: Exception) {
-                SyncTaskResponse(dto.id, null, ResultCode.ERROR.toString())
+                SyncTaskResponse(dto.id, ResultCode.ERROR.toString())
             }
         })
     }

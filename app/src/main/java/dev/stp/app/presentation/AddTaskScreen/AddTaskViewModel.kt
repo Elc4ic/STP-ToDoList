@@ -11,44 +11,42 @@ import kotlinx.coroutines.launch
 import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskState.Creation
 
 
+class AddTaskViewModel(
+    private val addTaskUseCase: AddTaskUseCase
 
+) : ViewModel() {
 
-class AddTaskViewModel (
-     private val addTaskUseCase: AddTaskUseCase
-
-) : ViewModel(){
-
-    private  val _state = MutableStateFlow<AddTaskState>(AddTaskState.Creation())
+    private val _state = MutableStateFlow<AddTaskState>(AddTaskState.Creation())
     val state = _state.asStateFlow()
 
 
-    fun processCommand(commands: Commands){
-        when(commands) {
+    fun processCommand(commands: Commands) {
+        when (commands) {
             is Commands.InputContent -> {
-                _state.update {prevState->
-                    if(prevState is Creation){
+                _state.update { prevState ->
+                    if (prevState is Creation) {
                         prevState.copy(content = commands.content)
-                    }
-                    else{
+                    } else {
                         prevState
                     }
 
                 }
             }
+
             is Commands.InputTitle -> {
-                _state.update {prevState->
-                    if(prevState is Creation){
+                _state.update { prevState ->
+                    if (prevState is Creation) {
                         prevState.copy(title = commands.title)
-                    }
-                    else{
+                    } else {
                         prevState
                     }
                 }
             }
+
             Commands.Save -> {
                 viewModelScope.launch {
-                    _state.update { prevState->
-                        if(prevState is Creation){
+                    _state.update { prevState ->
+                        if (prevState is Creation) {
                             addTaskUseCase(
                                 title = prevState.title,
                                 content = prevState.content,
@@ -57,73 +55,63 @@ class AddTaskViewModel (
                                 deadline = prevState.deadline
                             )
                             prevState
-                        }
-                        else{
+                        } else {
                             prevState
                         }
                     }
                 }
-
-                }
+            }
 
             is Commands.InputTimeEnd -> {
-                _state.update {prevState->
-                    if(prevState is Creation){
+                _state.update { prevState ->
+                    if (prevState is Creation) {
                         prevState.copy(deadline = commands.timeEnd)
-                    }
-                    else{
+                    } else {
                         prevState
                     }
                 }
-
             }
+
             is Commands.InputTimeStart -> {
-                _state.update {prevState->
-                    if(prevState is Creation){
+                _state.update { prevState ->
+                    if (prevState is Creation) {
                         prevState.copy(createdAt = commands.timeStart)
-                    }
-                    else{
+                    } else {
                         prevState
                     }
                 }
 
             }
         }
-        }
-
     }
+}
 
 
-
-
-
-
-
-sealed interface AddTaskState{
+sealed interface AddTaskState {
 
     data class Creation(
         val title: String = "",
         val content: String = "",
         val createdAt: Long = 0,
         val deadline: Long = 0
-    ) : AddTaskState{
+    ) : AddTaskState {
         val isSaveEnabled: Boolean
-            get(){
-                return (title.isNotBlank() && createdAt!=0L && deadline!=0L && deadline > createdAt)
+            get() {
+                return (title.isNotBlank() && createdAt != 0L && deadline != 0L && deadline > createdAt)
             }
 
     }
 
 }
 
-sealed interface Commands{
+sealed interface Commands {
 
-    data class InputTitle(val title: String): Commands
+    data class InputTitle(val title: String) : Commands
     data class InputTimeStart(val timeStart: Long) : Commands
     data class InputTimeEnd(val timeEnd: Long) : Commands
-    data class InputContent(val content: String): Commands
+    data class InputContent(val content: String) : Commands
 
-    data object Save: Commands
+    data object Save : Commands
 }
 
 

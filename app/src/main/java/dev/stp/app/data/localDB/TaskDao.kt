@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 
 @Dao
@@ -21,13 +22,13 @@ interface TaskDao {
     suspend fun addTask(task: TaskDbModel)
 
     @Query("DELETE FROM tasks WHERE id == :taskId")
-    suspend fun deleteTask(taskId:Int)
+    suspend fun deleteTask(taskId:UUID)
 
     @Query("SELECT * FROM tasks WHERE id == :taskId")
-    suspend fun getTask(taskId:Int) : TaskDbModel
+    suspend fun getTask(taskId: UUID) : TaskDbModel
 
     @Query("UPDATE tasks SET isPinned = NOT isPinned WHERE id = :taskId")
-    fun switchPinned(taskId:Int)
+    fun switchPinned(taskId:UUID)
 
     @Query("""
         SELECT DISTINCT *  FROM tasks

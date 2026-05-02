@@ -50,13 +50,12 @@ import ru.dedmos.todo.presentation.AddTaskScreen.Commands
 
 
 @Composable
-fun AddTaskScreen (
+fun AddTaskScreen(
     modifier: Modifier = Modifier,
     viewModel: AddTaskViewModel = koinViewModel(),
-    onFinish: ()->Unit,
-    onBack: ()->Unit
-){
-
+    onFinish: () -> Unit,
+    onBack: () -> Unit
+) {
 
     val state = viewModel.state.collectAsState()
     val currState = state.value
@@ -76,17 +75,18 @@ fun AddTaskScreen (
         mutableStateOf<Long?>(null)
     }
 
-    when(currState) {
+    when (currState) {
         is AddTaskState.Creation -> {
-            Scaffold (
+            Scaffold(
                 modifier = modifier,
                 containerColor = MaterialTheme.colorScheme.primary,
                 topBar = {
                     TopAppBar(
                         navigationIcon = {
                             Icon(
-                                modifier = Modifier.padding(start = 16.dp,end = 8.dp)
-                                    .clickable{
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 8.dp)
+                                    .clickable {
                                         onBack()
                                     },
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -105,15 +105,18 @@ fun AddTaskScreen (
                     )
 
                 }
-            ){innerPadding->
+            ) { innerPadding ->
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
                 ) {
                     TextField(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         value = currState.title,
-                        onValueChange ={
+                        onValueChange = {
                             viewModel.processCommand(Commands.InputTitle(it))
                         },
                         colors = TextFieldDefaults.colors(
@@ -139,11 +142,12 @@ fun AddTaskScreen (
                     )
                     DateField(
                         title = "Start date",
-                        value = startDateMillis?.let { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            formatDateFromMillis(it)
-                        } else {
-                            TODO("VERSION.SDK_INT < O")
-                        }
+                        value = startDateMillis?.let {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                formatDateFromMillis(it)
+                            } else {
+                                TODO("VERSION.SDK_INT < O")
+                            }
                         } ?: "Select start date",
                         onClick = {
                             selectedDateField = SelectedDateField.START
@@ -155,11 +159,12 @@ fun AddTaskScreen (
 
                     DateField(
                         title = "End date",
-                        value = endDateMillis?.let { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            formatDateFromMillis(it)
-                        } else {
-                            TODO("VERSION.SDK_INT < O")
-                        }
+                        value = endDateMillis?.let {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                formatDateFromMillis(it)
+                            } else {
+                                TODO("VERSION.SDK_INT < O")
+                            }
                         } ?: "Select end date",
                         onClick = {
                             selectedDateField = SelectedDateField.END
@@ -168,10 +173,12 @@ fun AddTaskScreen (
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     TextField(
-                        modifier = Modifier.fillMaxWidth().weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                             .padding(horizontal = 8.dp),
                         value = currState.content,
-                        onValueChange ={
+                        onValueChange = {
                             viewModel.processCommand(Commands.InputContent(it))
                         },
                         colors = TextFieldDefaults.colors(
@@ -248,14 +255,8 @@ fun AddTaskScreen (
                     }
                 )
             }
-
-
-
         }
-
     }
-
-
 }
 
 @Composable
@@ -264,7 +265,7 @@ private fun DateField(
     title: String,
     value: String,
     onClick: () -> Unit
-){
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
