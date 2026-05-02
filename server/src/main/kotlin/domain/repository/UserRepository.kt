@@ -6,21 +6,28 @@ import dev.stp.infrastructure.schema.UsersTable
 import dev.stp.infrastructure.security.PasswordHasher
 import dto.AuthRequest
 import dto.UserDto
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
 interface UserRepository {
-    suspend fun findUserByLogin(login: String): UserEntity?
+    suspend fun findByLogin(login: String): UserEntity?
+    suspend fun findById(id: String): UserEntity?
+
     suspend fun createUser(request: AuthRequest): UserDto
 }
 
 class PostgresUserRepository : UserRepository {
 
-    override suspend fun findUserByLogin(login: String): UserEntity? = dbQuery {
+    override suspend fun findByLogin(login: String): UserEntity? = dbQuery {
         UsersTable.selectAll().where { UsersTable.login eq login }
+            .map { it.toUserEntity() }
+            .singleOrNull()
+    }
+
+    override suspend fun findById(id: String): UserEntity? = dbQuery {
+        val uuid = UUID.fromString(id)
+        UsersTable.selectAll().where { UsersTable.id eq uuid }
             .map { it.toUserEntity() }
             .singleOrNull()
     }
@@ -39,7 +46,4 @@ class PostgresUserRepository : UserRepository {
             login = request.login
         )
     }
-
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
 }

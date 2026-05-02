@@ -3,9 +3,12 @@ package dev.stp.app.di
 import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDataBase
 import androidx.room.Room
+import apiRoutes.Api
 import dev.stp.app.data.datasource.TokenManager
+import dev.stp.app.data.repository.AuthRepositoryImpl
 import dev.stp.app.data.repository.SyncRepositoryImpl
 import dev.stp.app.data.repository.TaskRepositoryImpl
+import dev.stp.app.domain.repository.AuthRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.usecases.AddTaskUseCase
@@ -16,7 +19,9 @@ import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
+import dto.AuthResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -24,6 +29,8 @@ import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
 import org.koin.android.ext.koin.androidContext
@@ -118,6 +125,12 @@ val viewModelModule = module {
 }
 
 val networkModule = module {
+    single { TokenManager(androidContext()) }
+
+    single<AuthRepository> {
+        AuthRepositoryImpl(client = get(), tokenManager = get())
+    }
+
     single {
         HttpClient(Android) {
             install(ContentNegotiation) {
@@ -128,12 +141,37 @@ val networkModule = module {
             install(Auth) {
                 bearer {
                     loadTokens {
-                        val token = get<TokenManager>().token.first()
-                        token?.let { BearerTokens(it, "") }
+                        val token = get<TokenManager>().accessToken.first()
+                        val refresh = get<TokenManager>().refreshToken.first()
+                        if (token != null && refresh != null) {
+                            BearerTokens(token, refresh)
+                        } else null
+                    }
+
+                    refreshTokens {
+                        val refreshToken = get<TokenManager>().refreshToken.first()
+                            ?: return@refreshTokens null
+
+                        try {
+                            val response = client.post(Api.Auth.Refresh.path) {
+                                setBody(refreshToken)
+                                markAsRefreshTokenRequest()
+                            }.body<AuthResponse>()
+                            get<TokenManager>().saveTokens(
+                                response.accessToken,
+                                response.refreshToken
+                            )
+                            BearerTokens(
+                                response.accessToken,
+                                response.refreshToken
+                            )
+                        } catch (e: Exception) {
+                            get<TokenManager>().clear()
+                            null
+                        }
                     }
                 }
             }
         }
     }
-    single { TokenManager(androidContext()) }
 }
