@@ -43,7 +43,6 @@ fun NavGraph(){
 
 
 sealed class Screen( val route: String){
-
     data object Tasks : Screen("main")
     data object AddTask: Screen("add_task")
 }

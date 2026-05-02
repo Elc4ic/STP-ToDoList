@@ -18,7 +18,7 @@ data class UserEntity(
 }
 
 fun ResultRow.toUserEntity() = UserEntity(
-    id = this[UsersTable.id],
+    id = this[UsersTable.id].value,
     login = this[UsersTable.login],
     passwordHash = this[UsersTable.passwordHash],
 )

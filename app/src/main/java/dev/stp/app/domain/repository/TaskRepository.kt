@@ -1,5 +1,6 @@
 package dev.stp.app.domain.repository
 
+import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.domain.entity.Task
 import kotlinx.coroutines.flow.Flow
 interface TaskRepository {
@@ -15,12 +16,11 @@ interface TaskRepository {
     suspend fun editTask(task: Task)
 
     fun getAllTasks(): Flow<List<Task>>
+    suspend fun getAllNotSyncTasks(): List<Task>
 
     suspend fun getTask(taskId : Int) : Task
 
     fun searchTask(query: String) :  Flow<List<Task>>
 
     fun switchPinned(taskId : Int)
-
-
 }

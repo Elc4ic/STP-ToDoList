@@ -143,7 +143,7 @@ fun TasksScreen(
             state.pinnedTasks.forEach {
                 item(key = it.id) {
                     TaskCard(
-                        task = Task(id = it.id, title = it.title, content = it.content, createdAt = it.createdAt, deadline = it.deadline),
+                        task = it,
                         onLongClick = {},
                         onTaskClick = {}
                     )
@@ -156,7 +156,7 @@ fun TasksScreen(
             state.tasks.forEach {
                 item(key = it.id) {
                     TaskCard(
-                        task = Task(id = it.id, title = it.title, content = it.content, createdAt = it.createdAt, deadline = it.deadline),
+                        task = it,
                         onLongClick = {},
                         onTaskClick = {}
                     )
