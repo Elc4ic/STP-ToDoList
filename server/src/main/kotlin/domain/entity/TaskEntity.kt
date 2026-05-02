@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import java.util.UUID
 
 data class TaskEntity(
-    val id: UUID,
+    val id: Int,
     val userId: UUID,
     val title: String,
     val content: String,
@@ -14,9 +14,8 @@ data class TaskEntity(
     val createdAt: Long,
     val deadline: Long
 ){
-    fun toDto(localId: Int): TaskDto = TaskDto(
-        id = localId,
-        remoteId = this.id.toString(),
+    fun toDto(): TaskDto = TaskDto(
+        id = this.id,
         title = this.title,
         content = this.content,
         isPinned = this.isPinned,

@@ -3,6 +3,7 @@ package dev.stp.routes
 import apiRoutes.Api
 import dev.stp.service.UserService
 import dto.AuthRequest
+import dto.AuthResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -24,5 +25,13 @@ fun Route.authRoutes() {
             //TODO вынести ошибки
             call.respondText("Неверный логин или пароль", status = HttpStatusCode.Unauthorized)
         }
+    }
+
+    post("/auth/refresh") {
+        val refreshToken = call.receive<String>()
+        val response = userService.refresh(refreshToken)
+
+        if (response != null) call.respond(response)
+        else call.respond(HttpStatusCode.Unauthorized)
     }
 }
