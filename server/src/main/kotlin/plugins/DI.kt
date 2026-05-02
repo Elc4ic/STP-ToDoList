@@ -21,7 +21,7 @@ fun Application.configureDI() {
             single { PostgresTaskRepository() as TaskRepository }
             single { TokenManager() }
             single<UserService> { UserServiceImpl(get(), get()) }
-            single< TaskService> { TaskServiceImpl(get()) }
+            single<TaskService> { TaskServiceImpl(get()) }
         })
     }
 }

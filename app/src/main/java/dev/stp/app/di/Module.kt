@@ -6,9 +6,11 @@ import androidx.room.Room
 import apiRoutes.Api
 import dev.stp.app.data.datasource.TokenManager
 import dev.stp.app.data.repository.AuthRepositoryImpl
+import dev.stp.app.data.repository.NotificationRepositoryImpl
 import dev.stp.app.data.repository.SyncRepositoryImpl
 import dev.stp.app.data.repository.TaskRepositoryImpl
 import dev.stp.app.domain.repository.AuthRepository
+import dev.stp.app.domain.repository.NotificationRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.usecases.AddTaskUseCase
@@ -56,10 +58,13 @@ val dataModule = module {
 
     single<SyncRepository> { SyncRepositoryImpl(androidContext()) }
 
+    single<NotificationRepository> { NotificationRepositoryImpl(androidContext()) }
+
     single<TaskRepository> {
         TaskRepositoryImpl(
             taskDao = get(),
-            syncRepository = get()
+            syncRepository = get(),
+            notificationRepository = get()
         )
     }
 }

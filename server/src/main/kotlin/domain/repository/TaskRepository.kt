@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
@@ -23,18 +24,27 @@ interface TaskRepository {
 
 class PostgresTaskRepository : TaskRepository {
     override suspend fun delete(userId: UUID, dto: TaskDto): String? = dbQuery {
-        TasksTable.deleteWhere { (id eq dto.id) and (TasksTable.userId eq userId) }
+        TasksTable.deleteWhere { (id eq UUID.fromString(dto.id)) and (TasksTable.userId eq userId) }
         null
     }
 
-    override suspend fun update(userId: UUID, dto: TaskDto): String? = dbQuery {
-        TasksTable.update({ (TasksTable.id eq dto.id) and (TasksTable.userId eq userId) }) {
-            it[title] = dto.title
-            it[content] = dto.content
-            it[isPinned] = dto.isPinned
-            it[deadline] = dto.deadline
+    override suspend fun update(userId: UUID, dto: TaskDto): String = dbQuery {
+        val serverTask = TasksTable.selectAll()
+            .where { TasksTable.id eq UUID.fromString(dto.id) }.singleOrNull()
+        //TODO потом доделаю
+        if (serverTask != null) {
+            val serverUpdatedAt = serverTask[TasksTable.updatedAt]
+
+            if (dto.updatedAt > serverUpdatedAt) {
+                TasksTable.update({ (TasksTable.id eq UUID.fromString(dto.id)) and (TasksTable.userId eq userId) }) {
+                    it[title] = dto.title
+                    it[content] = dto.content
+                    it[isPinned] = dto.isPinned
+                    it[deadline] = dto.deadline
+                }
+            }
         }
-        dto.remoteId
+        dto.id
     }
 
     override suspend fun insert(userId: UUID, dto: TaskDto): String = dbQuery {
