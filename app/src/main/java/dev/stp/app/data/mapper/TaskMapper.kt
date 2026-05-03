@@ -29,9 +29,7 @@ fun List<TaskDbModel>.toEntity(): List<Task> {
 fun TaskDbModel.toDto() =
     TaskDto(id.toString(), title, content, isPinned, createdAt,updatedAt, deadline, syncStatus = syncStatus.name)
 
-fun List<TaskDbModel>.toDto(): List<TaskDto> {
-    return map { it.toDto() }
-}
+
 
 
 

@@ -20,6 +20,7 @@ import dev.stp.app.domain.usecases.GetAllTaskUseCase
 import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
+import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
 import io.ktor.client.HttpClient
@@ -125,6 +126,15 @@ val viewModelModule = module {
     viewModel {
         AddTaskViewModel(
             addTaskUseCase = get()
+        )
+    }
+
+    viewModel {parameters->
+        EditTaskViewModel(
+            taskId = parameters.get(),
+            editTaskUseCase = get(),
+            deleteTaskUseCase = get(),
+            getTaskUseCase = get()
         )
     }
 }

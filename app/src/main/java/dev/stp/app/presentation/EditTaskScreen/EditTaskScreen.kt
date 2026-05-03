@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package dev.stp.app.presentation.AddTaskScreen
-
+package dev.stp.app.presentation.EditTaskScreen
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -29,13 +30,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,19 +42,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import dev.stp.app.presentation.EditTaskScreen.EditCommands.*
+import dev.stp.app.presentation.ui.theme.CustomIcons
 import org.koin.androidx.compose.koinViewModel
-import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskState
-import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskViewModel
-import ru.dedmos.todo.presentation.AddTaskScreen.Commands
+import org.koin.core.parameter.parametersOf
+import java.util.UUID
 
 
 @Composable
-fun AddTaskScreen(
+fun EditScreen(
+    taskId: UUID,
     modifier: Modifier = Modifier,
-    viewModel: AddTaskViewModel = koinViewModel(),
-    onFinish: () -> Unit,
-    onBack: () -> Unit
-) {
+    viewModel: EditTaskViewModel = koinViewModel {
+        parametersOf(taskId)
+    },
+    onFinish: ()->Unit
+){
 
     val state = viewModel.state.collectAsState()
     val currState = state.value
@@ -75,19 +80,62 @@ fun AddTaskScreen(
         mutableStateOf<Long?>(null)
     }
 
-    when (currState) {
-        is AddTaskState.Creation -> {
+    when(currState) {
+        is ScreenState.Editing -> {
+            LaunchedEffect(taskId) {
+                startDateMillis = currState.task.createdAt
+                endDateMillis = currState.task.deadline
+
+            }
             Scaffold(
                 modifier = modifier,
                 containerColor = MaterialTheme.colorScheme.primary,
                 topBar = {
                     TopAppBar(
+                        actions = {
+                            if(currState.task.isPinned){
+                                Icon(
+                                    modifier = Modifier
+                                        .padding(end = 32.dp)
+                                        .clickable{
+                                            viewModel.processCommands(EditCommands.SwitchPinned(taskId))
+                                        },
+                                    imageVector = CustomIcons.Pinned,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }else{
+                                Icon(
+                                    modifier = Modifier
+                                        .padding(end = 32.dp)
+                                        .clickable{
+                                            viewModel.processCommands(EditCommands.SwitchPinned(taskId))
+                                        },
+                                    imageVector = CustomIcons.UnPinned,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+
+
+                            Icon(
+                                modifier = Modifier
+                                    .padding(end = 32.dp)
+                                    .clickable{
+                                    viewModel.processCommands(EditCommands.DeleteTask(taskId))
+                                    onFinish()
+                                },
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
                         navigationIcon = {
                             Icon(
                                 modifier = Modifier
                                     .padding(start = 16.dp, end = 8.dp)
                                     .clickable {
-                                        onBack()
+                                        onFinish()
                                     },
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
@@ -115,9 +163,9 @@ fun AddTaskScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
-                        value = currState.title,
+                        value = currState.task.title,
                         onValueChange = {
-                            viewModel.processCommand(Commands.InputTitle(it))
+                            viewModel.processCommands(InputTitle(it))
                         },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
@@ -177,9 +225,9 @@ fun AddTaskScreen(
                             .fillMaxWidth()
                             .weight(1f)
                             .padding(horizontal = 8.dp),
-                        value = currState.content,
+                        value = currState.task.content,
                         onValueChange = {
-                            viewModel.processCommand(Commands.InputContent(it))
+                            viewModel.processCommands(InputContent(it))
                         },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
@@ -208,7 +256,7 @@ fun AddTaskScreen(
                             .fillMaxWidth(),
 
                         onClick = {
-                            viewModel.processCommand(Commands.Save)
+                            viewModel.processCommands(EditCommands.Save)
                             onFinish()
 
                         },
@@ -239,12 +287,12 @@ fun AddTaskScreen(
                         when (selectedDateField) {
                             SelectedDateField.START -> {
                                 startDateMillis = millis
-                                viewModel.processCommand(Commands.InputTimeStart(millis ?: 0L))
+                                viewModel.processCommands(InputTimeStart(millis ?: 0L))
                             }
 
                             SelectedDateField.END -> {
                                 endDateMillis = millis
-                                viewModel.processCommand(Commands.InputTimeEnd(millis ?: 0L))
+                                viewModel.processCommands(InputTimeEnd(millis ?: 0L))
                             }
 
                             null -> Unit
@@ -256,8 +304,16 @@ fun AddTaskScreen(
                 )
             }
         }
+
+
     }
+
+
 }
+
+
+
+
 
 @Composable
 private fun DateField(

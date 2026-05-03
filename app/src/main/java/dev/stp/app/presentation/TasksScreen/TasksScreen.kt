@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import dev.stp.app.R
 import dev.stp.app.data.mapper.DateFormater
 import dev.stp.app.domain.entity.Task
+import dev.stp.app.presentation.ui.theme.CustomIcons
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.koin.androidx.compose.koinViewModel
 
@@ -145,7 +146,7 @@ fun TasksScreen(
                     TaskCard(
                         task = it,
                         onLongClick = {},
-                        onTaskClick = {}
+                        onTaskClick = onTaskClick
                     )
 
                 }
@@ -158,7 +159,7 @@ fun TasksScreen(
                     TaskCard(
                         task = it,
                         onLongClick = {},
-                        onTaskClick = {}
+                        onTaskClick = onTaskClick
                     )
 
                 }
@@ -265,17 +266,18 @@ private fun TaskCard(
         modifier = modifier
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
+            .combinedClickable(
+                onClick ={
+                    onTaskClick(task)
+                },
+                onLongClick = {
+                    onLongClick(task)
+                }
+            )
             .clip(RoundedCornerShape(8.dp))
             .background(color = MaterialTheme.colorScheme.primary )
             .padding(16.dp)
-            .combinedClickable(
-            onClick ={
-                onTaskClick(task)
-            },
-            onLongClick = {
-                onLongClick(task)
-            }
-        )
+
     ) {
         Text(
             text = task.title,
@@ -307,7 +309,7 @@ private fun TaskCard(
             }
             if(task.isPinned){
                 Icon(
-                    imageVector = Icons.Default.Lock,
+                    imageVector = CustomIcons.Pinned,
                     contentDescription = "pinned",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )

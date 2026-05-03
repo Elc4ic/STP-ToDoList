@@ -1,12 +1,15 @@
 package dev.stp.app.presentation.navigation
 
+import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dev.stp.app.data.mapper.UuidConverter
 import dev.stp.app.presentation.AddTaskScreen.AddTaskScreen
+import dev.stp.app.presentation.EditTaskScreen.EditScreen
 import dev.stp.app.presentation.TasksScreen.TasksScreen
-
+import java.util.UUID
 
 
 @Composable
@@ -23,7 +26,10 @@ fun NavGraph(){
                 },
                 settingsClick = {},
                 notifyClick = {},
-                onTaskClick = {}
+                onTaskClick = {
+                    navController.navigate(Screen.EditScreen.createRoute(it.id))
+
+                }
             )
 
 
@@ -36,6 +42,15 @@ fun NavGraph(){
                 onBack = {navController.popBackStack()}
             )
         }
+        composable(Screen.EditScreen.route){
+            val taskId = Screen.EditScreen.getTaskId(it.arguments)
+            EditScreen(
+                taskId = taskId,
+                onFinish = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 
 }
@@ -45,4 +60,16 @@ fun NavGraph(){
 sealed class Screen( val route: String){
     data object Tasks : Screen("main")
     data object AddTask: Screen("add_task")
+
+
+    data object  EditScreen: Screen("edit_task/{task_id}"){
+        fun createRoute(taskId: UUID): String{
+            return "edit_task/$taskId"
+        }
+        fun getTaskId(arguments: Bundle?): UUID{
+            val taskId = arguments?.getString("task_id")
+            return UUID.fromString(taskId)
+
+        }
+    }
 }
