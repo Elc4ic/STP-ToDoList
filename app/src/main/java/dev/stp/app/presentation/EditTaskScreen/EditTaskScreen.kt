@@ -13,9 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,7 +80,18 @@ fun EditScreen(
         mutableStateOf<Long?>(null)
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                ScreenEvent.Finish -> onFinish()
+            }
+        }
+    }
+
     when(currState) {
+        is ScreenState.Loading -> {
+            CircularProgressIndicator()
+        }
         is ScreenState.Editing -> {
             LaunchedEffect(taskId) {
                 startDateMillis = currState.task.createdAt
@@ -98,7 +109,7 @@ fun EditScreen(
                                     modifier = Modifier
                                         .padding(end = 32.dp)
                                         .clickable{
-                                            viewModel.processCommands(EditCommands.SwitchPinned(taskId))
+                                            viewModel.processCommands(EditCommands.SwitchPinned)
                                         },
                                     imageVector = CustomIcons.Pinned,
                                     contentDescription = "",
@@ -109,7 +120,7 @@ fun EditScreen(
                                     modifier = Modifier
                                         .padding(end = 32.dp)
                                         .clickable{
-                                            viewModel.processCommands(EditCommands.SwitchPinned(taskId))
+                                            viewModel.processCommands(EditCommands.SwitchPinned)
                                         },
                                     imageVector = CustomIcons.UnPinned,
                                     contentDescription = "",
@@ -122,7 +133,7 @@ fun EditScreen(
                                 modifier = Modifier
                                     .padding(end = 32.dp)
                                     .clickable{
-                                    viewModel.processCommands(EditCommands.DeleteTask(taskId))
+                                    viewModel.processCommands(EditCommands.DeleteTask)
                                     onFinish()
                                 },
                                 imageVector = Icons.Default.Delete,
@@ -304,14 +315,8 @@ fun EditScreen(
                 )
             }
         }
-
-
     }
-
-
 }
-
-
 
 
 

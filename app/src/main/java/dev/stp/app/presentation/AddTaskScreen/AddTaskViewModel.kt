@@ -13,7 +13,6 @@ import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskState.Creation
 
 class AddTaskViewModel(
     private val addTaskUseCase: AddTaskUseCase
-
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AddTaskState>(AddTaskState.Creation())
