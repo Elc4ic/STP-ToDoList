@@ -15,9 +15,14 @@ fun Application.configureSecurity(jwtName: String) {
         jwt(jwtName) {
             verifier(tokenManager.verifier)
             validate { credential ->
-                if (credential.payload.getClaim("login").asString().isNotEmpty()) {
+                val userId = credential.payload.getClaim("userId").asString()
+                val tokenType = credential.payload.getClaim("type").asString()
+
+                if (!userId.isNullOrEmpty() && tokenType == "access") {
                     JWTPrincipal(credential.payload)
-                } else null
+                } else {
+                    null
+                }
             }
         }
     }
