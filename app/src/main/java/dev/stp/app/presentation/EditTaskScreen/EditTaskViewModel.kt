@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.dedmos.todo.presentation.AddTaskScreen.Commands
 import java.util.UUID
 
 class EditTaskViewModel(
@@ -76,6 +77,10 @@ class EditTaskViewModel(
             deleteTaskUseCase(currentState.task.id)
             _event.emit(ScreenEvent.Finish)
         }
+    }
+
+    fun processCommand(commands: Commands) {
+        TODO()
     }
 }
 

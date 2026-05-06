@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -25,30 +23,31 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import dev.stp.app.presentation.EditTaskScreen.EditCommands.*
+import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeEnd
+import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeStart
+import dev.stp.app.presentation.components.ButtonComponent
+import dev.stp.app.presentation.components.TextFieldComponent
 import dev.stp.app.presentation.ui.theme.CustomIcons
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import ru.dedmos.todo.presentation.AddTaskScreen.Commands
 import java.util.UUID
 
 
@@ -170,34 +169,17 @@ fun EditScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    TextField(
+                    TextFieldComponent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         value = currState.task.title,
-                        onValueChange = {
-                            viewModel.processCommands(InputTitle(it))
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                        ),
-                        placeholder = {
-                            Text(
-                                text = "Title",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp
-                            )
-                        },
+                        onValueChange = { viewModel.processCommand(Commands.InputTitle(it)) },
+                        placeholderText = "Title",
                         textStyle = TextStyle(
                             fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            fontWeight = FontWeight.Bold
                         )
-
                     )
                     DateField(
                         title = "Start date",
@@ -231,59 +213,26 @@ fun EditScreen(
                         }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
-                    TextField(
+                    TextFieldComponent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .padding(horizontal = 8.dp),
                         value = currState.task.content,
-                        onValueChange = {
-                            viewModel.processCommands(InputContent(it))
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                        ),
-                        placeholder = {
-                            Text(
-                                text = "Content",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.W400,
-                                fontSize = 16.sp
-                            )
-                        },
+                        onValueChange = { viewModel.processCommand(Commands.InputContent(it)) },
+                        placeholderText = "Content",
                         textStyle = TextStyle(
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.W400,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            fontWeight = FontWeight.W400
                         )
-
                     )
-                    Button(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .fillMaxWidth(),
-
+                    ButtonComponent(
+                        isEnabled = currState.isSaveEnabled,
                         onClick = {
-                            viewModel.processCommands(EditCommands.Save)
+                            viewModel.processCommand(Commands.Save)
                             onFinish()
-
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        enabled = currState.isSaveEnabled,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.1f),
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContentColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Text(
-                            text = "Save task"
-                        )
-                    }
+                        }
+                    )
                 }
 
             }
