@@ -20,6 +20,7 @@ import dev.stp.app.domain.usecases.GetAllTaskUseCase
 import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
+import dev.stp.app.presentation.AuthScreen.AuthViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
@@ -68,6 +69,8 @@ val dataModule = module {
             notificationRepository = get()
         )
     }
+
+    single<AuthRepository> { AuthRepositoryImpl(get(), get()) }
 }
 val domainModule = module {
 
@@ -135,6 +138,12 @@ val viewModelModule = module {
             editTaskUseCase = get(),
             deleteTaskUseCase = get(),
             getTaskUseCase = get()
+        )
+    }
+
+    viewModel {
+        AuthViewModel (
+            authUseCase = get()
         )
     }
 }

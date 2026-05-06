@@ -16,10 +16,10 @@ class TaskApp : Application() {
             androidContext(this@TaskApp)
 
             modules(
+                networkModule,
                 dataModule,
                 domainModule,
-                viewModelModule,
-                networkModule
+                viewModelModule
             )
         }
     }
