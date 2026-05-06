@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 
 @Composable
-fun TextFieldComponent(
+fun AppTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholderText: String,

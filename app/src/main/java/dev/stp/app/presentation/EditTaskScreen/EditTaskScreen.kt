@@ -1,7 +1,9 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package dev.stp.app.presentation.EditTaskScreen
+
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,23 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,15 +38,18 @@ import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
 import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeEnd
 import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeStart
-import dev.stp.app.presentation.components.ButtonComponent
-import dev.stp.app.presentation.components.TextFieldComponent
+import dev.stp.app.presentation.components.AppButton
+import dev.stp.app.presentation.components.AppTextField
+import dev.stp.app.presentation.components.DateField
+import dev.stp.app.presentation.components.TaskDatePickerDialog
 import dev.stp.app.presentation.ui.theme.CustomIcons
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.dedmos.todo.presentation.AddTaskScreen.Commands
+import ru.dedmos.todo.presentation.AddTaskScreen.AddCommands
 import java.util.UUID
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EditScreen(
     taskId: UUID,
@@ -58,11 +57,11 @@ fun EditScreen(
     viewModel: EditTaskViewModel = koinViewModel {
         parametersOf(taskId)
     },
-    onFinish: ()->Unit
-){
+    onFinish: () -> Unit
+) {
 
-    val state = viewModel.state.collectAsState()
-    val currState = state.value
+    val state by viewModel.state.collectAsState()
+
     var showDatePicker by remember {
         mutableStateOf(false)
     }
@@ -71,54 +70,42 @@ fun EditScreen(
         mutableStateOf<SelectedDateField?>(null)
     }
 
-    var startDateMillis by remember {
-        mutableStateOf<Long?>(null)
-    }
-
-    var endDateMillis by remember {
-        mutableStateOf<Long?>(null)
-    }
-
     LaunchedEffect(Unit) {
         viewModel.event.collect { event ->
             when (event) {
-                ScreenEvent.Finish -> onFinish()
+                EditScreenEvent.Finish -> onFinish()
             }
         }
     }
 
-    when(currState) {
-        is ScreenState.Loading -> {
+    when (val state = state) {
+        is EditScreenState.Loading -> {
             CircularProgressIndicator()
         }
-        is ScreenState.Editing -> {
-            LaunchedEffect(taskId) {
-                startDateMillis = currState.task.createdAt
-                endDateMillis = currState.task.deadline
 
-            }
+        is EditScreenState.Editing -> {
             Scaffold(
                 modifier = modifier,
                 containerColor = MaterialTheme.colorScheme.primary,
                 topBar = {
                     TopAppBar(
                         actions = {
-                            if(currState.task.isPinned){
+                            if (state.task.isPinned) {
                                 Icon(
                                     modifier = Modifier
                                         .padding(end = 32.dp)
-                                        .clickable{
+                                        .clickable {
                                             viewModel.processCommands(EditCommands.SwitchPinned)
                                         },
                                     imageVector = CustomIcons.Pinned,
                                     contentDescription = "",
                                     tint = MaterialTheme.colorScheme.onPrimary
                                 )
-                            }else{
+                            } else {
                                 Icon(
                                     modifier = Modifier
                                         .padding(end = 32.dp)
-                                        .clickable{
+                                        .clickable {
                                             viewModel.processCommands(EditCommands.SwitchPinned)
                                         },
                                     imageVector = CustomIcons.UnPinned,
@@ -126,15 +113,13 @@ fun EditScreen(
                                     tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
-
-
                             Icon(
                                 modifier = Modifier
                                     .padding(end = 32.dp)
-                                    .clickable{
-                                    viewModel.processCommands(EditCommands.DeleteTask)
-                                    onFinish()
-                                },
+                                    .clickable {
+                                        viewModel.processCommands(EditCommands.DeleteTask)
+                                        onFinish()
+                                    },
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "",
                                 tint = MaterialTheme.colorScheme.onPrimary
@@ -169,12 +154,12 @@ fun EditScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    TextFieldComponent(
+                    AppTextField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
-                        value = currState.task.title,
-                        onValueChange = { viewModel.processCommand(Commands.InputTitle(it)) },
+                        value = state.task.title,
+                        onValueChange = { viewModel.processCommands(EditCommands.InputTitle(it)) },
                         placeholderText = "Title",
                         textStyle = TextStyle(
                             fontSize = 24.sp,
@@ -183,13 +168,9 @@ fun EditScreen(
                     )
                     DateField(
                         title = "Start date",
-                        value = startDateMillis?.let {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                formatDateFromMillis(it)
-                            } else {
-                                TODO("VERSION.SDK_INT < O")
-                            }
-                        } ?: "Select start date",
+                        value = if (state.task.createdAt != 0L) {
+                            formatDateFromMillis(state.task.createdAt)
+                        } else "Select start date",
                         onClick = {
                             selectedDateField = SelectedDateField.START
                             showDatePicker = true
@@ -200,36 +181,32 @@ fun EditScreen(
 
                     DateField(
                         title = "End date",
-                        value = endDateMillis?.let {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                formatDateFromMillis(it)
-                            } else {
-                                TODO("VERSION.SDK_INT < O")
-                            }
-                        } ?: "Select end date",
+                        value = if (state.task.deadline != 0L) {
+                            formatDateFromMillis(state.task.deadline)
+                        } else "Select end date",
                         onClick = {
                             selectedDateField = SelectedDateField.END
                             showDatePicker = true
                         }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
-                    TextFieldComponent(
+                    AppTextField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .padding(horizontal = 8.dp),
-                        value = currState.task.content,
-                        onValueChange = { viewModel.processCommand(Commands.InputContent(it)) },
+                        value = state.task.content,
+                        onValueChange = { viewModel.processCommands(EditCommands.InputContent(it)) },
                         placeholderText = "Content",
                         textStyle = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.W400
                         )
                     )
-                    ButtonComponent(
-                        isEnabled = currState.isSaveEnabled,
+                    AppButton(
+                        isEnabled = state.isSaveEnabled,
                         onClick = {
-                            viewModel.processCommand(Commands.Save)
+                            viewModel.processCommands(EditCommands.Save)
                             onFinish()
                         }
                     )
@@ -239,24 +216,29 @@ fun EditScreen(
             if (showDatePicker) {
                 TaskDatePickerDialog(
                     initialDateMillis = when (selectedDateField) {
-                        SelectedDateField.START -> startDateMillis
-                        SelectedDateField.END -> endDateMillis
+                        SelectedDateField.START -> if (state.task.createdAt != 0L) state.task.createdAt else null
+                        SelectedDateField.END -> if (state.task.deadline != 0L) state.task.deadline else null
                         null -> null
                     },
                     onDateSelected = { millis ->
-                        when (selectedDateField) {
-                            SelectedDateField.START -> {
-                                startDateMillis = millis
-                                viewModel.processCommands(InputTimeStart(millis ?: 0L))
-                            }
+                        millis?.let {
+                            when (selectedDateField) {
+                                SelectedDateField.START -> viewModel.processCommands(
+                                    EditCommands.InputTimeStart(
+                                        it
+                                    )
+                                )
 
-                            SelectedDateField.END -> {
-                                endDateMillis = millis
-                                viewModel.processCommands(InputTimeEnd(millis ?: 0L))
-                            }
+                                SelectedDateField.END -> viewModel.processCommands(
+                                    EditCommands.InputTimeEnd(
+                                        it
+                                    )
+                                )
 
-                            null -> Unit
+                                null -> Unit
+                            }
                         }
+                        showDatePicker = true
                     },
                     onDismiss = {
                         showDatePicker = false
@@ -264,86 +246,5 @@ fun EditScreen(
                 )
             }
         }
-    }
-}
-
-
-
-@Composable
-private fun DateField(
-    modifier: Modifier = Modifier,
-    title: String,
-    value: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .clickable {
-                onClick()
-            },
-        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Text(
-                text = title,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = value,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TaskDatePickerDialog(
-    initialDateMillis: Long?,
-    onDateSelected: (Long?) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis
-    )
-
-    DatePickerDialog(
-        onDismissRequest = {
-            onDismiss()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDateSelected(datePickerState.selectedDateMillis)
-                    onDismiss()
-                }
-            ) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-                Text("Cancel")
-            }
-        }
-    ) {
-        DatePicker(
-            state = datePickerState
-        )
     }
 }

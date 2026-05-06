@@ -15,16 +15,17 @@ import org.koin.ktor.ext.inject
 fun Route.authRoutes() {
     val userService by inject<UserService>()
 
+    post(Api.Auth.Register.path) {
+        val request = call.receive<AuthRequest>()
+        val userDto = userService.register(request)
+        call.respond(HttpStatusCode.Created, userDto)
+    }
+
     post(Api.Auth.Login.path) {
         val request = call.receive<AuthRequest>()
         val response = userService.authenticate(request)
+        call.respond(status = HttpStatusCode.Created, response)
 
-        if (response != null) {
-            call.respond(response)
-        } else {
-            //TODO вынести ошибки
-            call.respondText("Неверный логин или пароль", status = HttpStatusCode.Unauthorized)
-        }
     }
 
     post(Api.Auth.Refresh.path) {

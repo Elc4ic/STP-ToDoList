@@ -18,6 +18,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+sealed interface TasksCommands {
+    data class InputQuery(val query: String) : TasksCommands
+    data class SwitchPinned(val taskId: UUID) : TasksCommands
+}
+
+data class ScreenState(
+    val query: String = "",
+    val pinnedTasks: List<Task> = listOf(),
+    val tasks: List<Task> = listOf()
+)
 
 class TaskViewModel(
     private val getAllTaskUseCase: GetAllTaskUseCase,
@@ -26,9 +36,7 @@ class TaskViewModel(
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
-
     private val _state = MutableStateFlow(ScreenState())
-
     val state = _state.asStateFlow()
 
     init {
@@ -37,18 +45,13 @@ class TaskViewModel(
                 _state.update { it.copy(query = input) }
             }
             .flatMapLatest {
-                if (it.isBlank()) {
-                    getAllTaskUseCase()
-                } else {
-                    searchTaskUseCase(it)
-                }
-
+                if (it.isBlank()) getAllTaskUseCase()
+                else searchTaskUseCase(it)
             }
             .onEach { tasks ->
                 val pinnedTask = tasks.filter { it.isPinned }
                 val tasks = tasks.filter { !it.isPinned }
                 _state.update { it.copy(pinnedTasks = pinnedTask, tasks = tasks) }
-
             }
             .launchIn(viewModelScope)
     }
@@ -58,26 +61,12 @@ class TaskViewModel(
             when (command) {
                 is TasksCommands.InputQuery -> {
                     query.update { command.query.trim() }
-
                 }
 
                 is TasksCommands.SwitchPinned -> {
                     switchPinnedUseCase(command.taskId)
-
                 }
             }
         }
     }
 }
-
-sealed interface TasksCommands {
-    data class InputQuery(val query: String) : TasksCommands
-    data class SwitchPinned(val taskId: UUID) : TasksCommands
-
-}
-
-data class ScreenState(
-    val query: String = "",
-    val pinnedTasks: List<Task> = listOf(),
-    val tasks: List<Task> = listOf()
-)

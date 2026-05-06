@@ -3,6 +3,7 @@
 package dev.stp.app.presentation.AddTaskScreen
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,16 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
-import dev.stp.app.presentation.components.ButtonComponent
+import dev.stp.app.presentation.components.AppButton
 import dev.stp.app.presentation.components.DateField
 import dev.stp.app.presentation.components.TaskDatePickerDialog
-import dev.stp.app.presentation.components.TextFieldComponent
+import dev.stp.app.presentation.components.AppTextField
 import org.koin.androidx.compose.koinViewModel
-import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskState
+import ru.dedmos.todo.presentation.AddTaskScreen.AddScreenState
 import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskViewModel
-import ru.dedmos.todo.presentation.AddTaskScreen.Commands
+import ru.dedmos.todo.presentation.AddTaskScreen.AddCommands
+import ru.dedmos.todo.presentation.AddTaskScreen.AddScreenEvent
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddTaskScreen(
     modifier: Modifier = Modifier,
@@ -49,27 +54,24 @@ fun AddTaskScreen(
     onFinish: () -> Unit,
     onBack: () -> Unit
 ) {
+    val state by viewModel.state.collectAsState()
 
-    val state = viewModel.state.collectAsState()
-    val currState = state.value
-    var showDatePicker by remember {
-        mutableStateOf(false)
+    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedDateField by remember { mutableStateOf<SelectedDateField?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                AddScreenEvent.Finish -> onFinish()
+            }
+        }
     }
 
-    var selectedDateField by remember {
-        mutableStateOf<SelectedDateField?>(null)
-    }
-
-    var startDateMillis by remember {
-        mutableStateOf<Long?>(null)
-    }
-
-    var endDateMillis by remember {
-        mutableStateOf<Long?>(null)
-    }
-
-    when (currState) {
-        is AddTaskState.Creation -> {
+    when (val state = state) {
+        is AddScreenState.Loading -> {
+            CircularProgressIndicator()
+        }
+        is AddScreenState.Creation -> {
             Scaffold(
                 modifier = modifier,
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -79,24 +81,17 @@ fun AddTaskScreen(
                             Icon(
                                 modifier = Modifier
                                     .padding(start = 16.dp, end = 8.dp)
-                                    .clickable {
-                                        onBack()
-                                    },
+                                    .clickable { onBack() },
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
                             )
                         },
-                        title = {
-                            Text(
-                                text = ""
-                            )
-                        },
+                        title = { Text("") },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
-
                 }
             ) { innerPadding ->
                 Column(
@@ -104,27 +99,19 @@ fun AddTaskScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    TextFieldComponent(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        value = currState.title,
-                        onValueChange = { viewModel.processCommand(Commands.InputTitle(it)) },
+                    AppTextField(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        value = state.title,
+                        onValueChange = { viewModel.processCommand(AddCommands.InputTitle(it)) },
                         placeholderText = "Title",
-                        textStyle = TextStyle(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        textStyle = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     )
+
                     DateField(
                         title = "Start date",
-                        value = startDateMillis?.let {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                formatDateFromMillis(it)
-                            } else {
-                                TODO("VERSION.SDK_INT < O")
-                            }
-                        } ?: "Select start date",
+                        value = if (state.createdAt != 0L) {
+                            formatDateFromMillis(state.createdAt)
+                        } else "Select start date",
                         onClick = {
                             selectedDateField = SelectedDateField.START
                             showDatePicker = true
@@ -135,67 +122,50 @@ fun AddTaskScreen(
 
                     DateField(
                         title = "End date",
-                        value = endDateMillis?.let {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                formatDateFromMillis(it)
-                            } else {
-                                TODO("VERSION.SDK_INT < O")
-                            }
-                        } ?: "Select end date",
+                        value = if (state.deadline != 0L) {
+                            formatDateFromMillis(state.deadline)
+                        } else "Select end date",
                         onClick = {
                             selectedDateField = SelectedDateField.END
                             showDatePicker = true
                         }
                     )
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    TextFieldComponent(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(horizontal = 8.dp),
-                        value = currState.content,
-                        onValueChange = { viewModel.processCommand(Commands.InputContent(it)) },
+
+                    AppTextField(
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 8.dp),
+                        value = state.content,
+                        onValueChange = { viewModel.processCommand(AddCommands.InputContent(it)) },
                         placeholderText = "Content",
-                        textStyle = TextStyle(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.W400
-                        )
+                        textStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.W400)
                     )
-                    ButtonComponent(
-                        isEnabled = currState.isSaveEnabled,
-                        onClick = {
-                            viewModel.processCommand(Commands.Save)
-                            onFinish()
-                        }
+
+                    AppButton(
+                        isEnabled = state.isSaveEnabled,
+                        onClick = { viewModel.processCommand(AddCommands.Save) }
                     )
                 }
-
             }
+
             if (showDatePicker) {
                 TaskDatePickerDialog(
                     initialDateMillis = when (selectedDateField) {
-                        SelectedDateField.START -> startDateMillis
-                        SelectedDateField.END -> endDateMillis
+                        SelectedDateField.START -> if (state.createdAt != 0L) state.createdAt else null
+                        SelectedDateField.END -> if (state.deadline != 0L) state.deadline else null
                         null -> null
                     },
                     onDateSelected = { millis ->
-                        when (selectedDateField) {
-                            SelectedDateField.START -> {
-                                startDateMillis = millis
-                                viewModel.processCommand(Commands.InputTimeStart(millis ?: 0L))
+                        millis?.let {
+                            when (selectedDateField) {
+                                SelectedDateField.START -> viewModel.processCommand(AddCommands.InputTimeStart(it))
+                                SelectedDateField.END -> viewModel.processCommand(AddCommands.InputTimeEnd(it))
+                                null -> Unit
                             }
-
-                            SelectedDateField.END -> {
-                                endDateMillis = millis
-                                viewModel.processCommand(Commands.InputTimeEnd(millis ?: 0L))
-                            }
-
-                            null -> Unit
                         }
-                    },
-                    onDismiss = {
                         showDatePicker = false
-                    }
+                    },
+                    onDismiss = { showDatePicker = false }
                 )
             }
         }

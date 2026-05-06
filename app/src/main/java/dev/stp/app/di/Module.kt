@@ -20,7 +20,7 @@ import dev.stp.app.domain.usecases.GetAllTaskUseCase
 import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
-import dev.stp.app.presentation.AuthScreen.AuthViewModel
+import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
@@ -142,8 +142,8 @@ val viewModelModule = module {
     }
 
     viewModel {
-        AuthViewModel (
-            authUseCase = get()
+        LogInViewModel (
+            logInUseCase = get()
         )
     }
 }
