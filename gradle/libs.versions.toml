@@ -1,6 +1,7 @@
 [versions]
 # Build Tools & Plugins
 agp = "9.1.1"
+dotenvKotlin = "6.4.1"
 kotlin = "2.3.20"
 ksp = "2.3.4"
 
@@ -17,17 +18,11 @@ composeBom = "2025.12.00"
 koin = "3.5.6"
 
 # Database & Storage (Android)
-roomRuntime = "2.7.2"
-roomCompiler = "2.7.2"
+room = "2.7.2"
 datastorePreferences = "1.1.1"
 
 # Network & Serialization
 ktor = "3.4.1"
-ktorClientAndroid = "3.4.1"
-ktorClientAuth = "3.4.1"
-ktorClientContentNegotiation = "3.4.1"
-ktorClientLogging = "3.4.1"
-ktorClientSerialization = "3.4.1"
 kotlinxSerializationJson = "1.10.0"
 
 # Server Side (Database & Auth)
@@ -67,16 +62,17 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 
 # Room
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
-androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
-androidx-room-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
-androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 
 # Background & Storage
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 # Koin (DI)
+dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 koin-androidx-compose-navigation = { module = "io.insert-koin:koin-androidx-compose-navigation", version.ref = "koin" }
@@ -84,17 +80,18 @@ insert-koin-koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koi
 insert-koin-koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # Ktor Client (Android)
-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
-ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktorClientAuth" }
-ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
-ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorClientLogging" }
-ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktorClientSerialization" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
 serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
 # Ktor Server
 server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
 server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-double-receive = { module = "io.ktor:ktor-server-double-receive", version.ref = "ktor" }
 server-callLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
 server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }

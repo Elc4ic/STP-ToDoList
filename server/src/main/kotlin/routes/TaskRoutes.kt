@@ -28,7 +28,7 @@ fun Route.taskRoutes() {
         call.respond(response)
     }
 
-    post(Api.Tasks.Get.path) {
+    post(Api.Tasks.GetAll.path) {
         val userId = getUserId() ?: return@post call.respond(HttpStatusCode.Unauthorized)
         val uuid = UUID.fromString(userId)
 

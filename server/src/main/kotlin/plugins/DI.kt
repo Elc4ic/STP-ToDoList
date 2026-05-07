@@ -17,9 +17,9 @@ import org.koin.ktor.plugin.Koin
 fun Application.configureDI() {
     install(Koin) {
         modules(module {
+            single { TokenManager() }
             single { PostgresUserRepository() as UserRepository }
             single { PostgresTaskRepository() as TaskRepository }
-            single { TokenManager() }
             single<UserService> { UserServiceImpl(get(), get()) }
             single<TaskService> { TaskServiceImpl(get()) }
         })

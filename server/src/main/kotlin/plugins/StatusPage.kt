@@ -9,16 +9,33 @@ import io.ktor.server.response.respond
 
 fun Application.configureStatusPages() {
     install(StatusPages) {
-        exception<AppError.Auth.UserAlreadyExists> { call, cause ->
-            call.respond(HttpStatusCode.Conflict, cause.message ?: "Логин занят")
+
+        exception<AppError.Auth.Server.UserAlreadyExists> { call, cause ->
+            call.respond(
+                HttpStatusCode.Conflict,
+                cause.message ?: "Логин занят"
+            )
         }
 
-        exception<AppError.Auth.InvalidCredentials> { call, cause ->
-            call.respond(HttpStatusCode.Unauthorized, cause.message ?: "")
+        exception<AppError.Auth.Server.InvalidCredentials> { call, cause ->
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                cause.message ?: "Неверный логин или пароль"
+            )
+        }
+
+        exception<AppError.Auth.Server.UserNotFound> { call, cause ->
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                cause.message ?: "Неверный логин или пароль"
+            )
         }
 
         exception<Throwable> { call, cause ->
-            call.respond(HttpStatusCode.InternalServerError, "Внутренняя ошибка сервера")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                cause.message ?: "Внутренняя ошибка сервера"
+            )
         }
     }
 }

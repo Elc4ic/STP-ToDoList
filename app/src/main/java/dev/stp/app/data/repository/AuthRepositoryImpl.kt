@@ -22,7 +22,7 @@ class AuthRepositoryImpl(
 
     override suspend fun login(login: String, password: String): Result<UserDto> {
         return try {
-            val response = client.post(Api.Auth.Login.path) {
+            val response = client.post(Api.Auth.Login.url()) {
                 setBody(AuthRequest(login, password))
             }
 
@@ -33,8 +33,8 @@ class AuthRepositoryImpl(
                     Result.success(authResponse.user)
                 }
 
-                HttpStatusCode.Unauthorized -> AppError.Auth.InvalidCredentials().toResult()
-                HttpStatusCode.NotFound -> AppError.Auth.UserNotFound().toResult()
+                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
+                HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound().toResult()
                 else -> AppError.ServerError().toResult()
             }
         } catch (e: Exception) {
@@ -50,7 +50,7 @@ class AuthRepositoryImpl(
 
     override suspend fun register(login: String, password: String): Result<UserDto> {
         return try {
-            val response = client.post(Api.Auth.Register.path) {
+            val response = client.post(Api.Auth.Register.url()) {
                 setBody(AuthRequest(login, password))
             }
 
@@ -61,8 +61,8 @@ class AuthRepositoryImpl(
                     Result.success(authResponse.user)
                 }
 
-                HttpStatusCode.Unauthorized -> AppError.Auth.InvalidCredentials().toResult()
-                HttpStatusCode.Conflict -> AppError.Auth.UserAlreadyExists(login).toResult()
+                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
+                HttpStatusCode.Conflict -> AppError.Auth.Server.UserAlreadyExists(login).toResult()
                 else -> AppError.ServerError().toResult()
             }
         } catch (e: Exception) {

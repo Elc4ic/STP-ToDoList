@@ -2,6 +2,7 @@ package dev.stp
 
 import dev.stp.infrastructure.db.DatabaseFactory
 import dev.stp.plugins.configureDI
+import dev.stp.plugins.configureLogging
 import dev.stp.plugins.configureRouting
 import dev.stp.plugins.configureSecurity
 import dev.stp.plugins.configureSerialization
@@ -12,6 +13,7 @@ fun Application.module() {
     val jwtName = "auth-jwt"
 
     DatabaseFactory.init()
+    configureLogging()
     configureSerialization()
     configureDI()
     configureStatusPages()

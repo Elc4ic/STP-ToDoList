@@ -10,7 +10,7 @@ import errors.AppError
 
 interface UserService {
     suspend fun authenticate(request: AuthRequest): AuthResponse
-    suspend fun register(request: AuthRequest): UserDto
+    suspend fun register(request: AuthRequest): AuthResponse
     suspend fun refresh(refreshToken: String): AuthResponse?
 }
 
@@ -21,10 +21,10 @@ class UserServiceImpl(
 
     override suspend fun authenticate(request: AuthRequest): AuthResponse {
         val user = userRepository.findByLogin(request.login)
-            ?: throw AppError.Auth.InvalidCredentials()
+            ?: throw AppError.Auth.Server.InvalidCredentials()
 
         if (!PasswordHasher.eqHash(request.password, user.passwordHash)) {
-            throw AppError.Auth.InvalidCredentials()
+            throw AppError.Auth.Server.InvalidCredentials()
         }
 
         val accessToken = tokenManager.generateAccessToken(user.id.toString(), user.login)
@@ -33,13 +33,15 @@ class UserServiceImpl(
         return AuthResponse(accessToken, refreshToken, user.toDto())
     }
 
-    override suspend fun register(request: AuthRequest): UserDto {
+    override suspend fun register(request: AuthRequest): AuthResponse {
         val existingUser = userRepository.findByLogin(request.login)
         if (existingUser != null) {
-            throw AppError.Auth.UserAlreadyExists(request.login)
+            throw AppError.Auth.Server.UserAlreadyExists(request.login)
         }
-
-        return userRepository.createUser(request)
+        val user = userRepository.createUser(request)
+        val accessToken = tokenManager.generateAccessToken(user.id, user.login)
+        val refreshToken = tokenManager.generateRefreshToken(user.id)
+        return AuthResponse(accessToken, refreshToken, user)
     }
 
     override suspend fun refresh(refreshToken: String): AuthResponse? {
