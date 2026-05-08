@@ -177,7 +177,7 @@ val networkModule = module {
                             ?: return@refreshTokens null
 
                         try {
-                            val response = client.post(Api.Auth.Refresh.path) {
+                            val response = client.post(Api.Auth.Refresh.url()) {
                                 setBody(refreshToken)
                                 markAsRefreshTokenRequest()
                             }.body<AuthResponse>()

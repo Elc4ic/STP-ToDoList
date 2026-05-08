@@ -7,7 +7,6 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.routing
 
 fun Application.configureRouting(jwtName: String) {
-
     routing {
         authRoutes()
         authenticate(jwtName) {

@@ -83,10 +83,11 @@ class LogInViewModel(
     private fun handleError(error: AppError?) {
         updateContent { prevState ->
             when (error) {
-                is AppError.Auth.LoginFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.PasswordTooShort -> prevState.copy(passwordError = error.message)
-                is AppError.Auth.InvalidCredentials -> prevState.copy(generalError = error.message)
+                is AppError.Auth.Client.LoginFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Auth.Client.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Auth.Client.PasswordTooShort -> prevState.copy(passwordError = error.message)
+                is AppError.Auth.Server.InvalidCredentials -> prevState.copy(generalError = error.message)
+                is AppError.Auth.Server.UserNotFound -> prevState.copy(generalError = error.message)
                 is AppError.NetworkError -> prevState.copy(generalError = error.message)
                 else -> prevState.copy(generalError = error?.message ?: "Неизвестная ошибка")
             }
