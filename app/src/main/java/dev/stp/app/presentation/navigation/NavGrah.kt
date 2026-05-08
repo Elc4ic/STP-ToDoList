@@ -25,14 +25,20 @@ fun NavGraph() {
         startDestination = Screen.Tasks.route,
     ) {
         composable(Screen.LogIn.route) {
-            LogInScreen {
-                navController.navigate(Screen.Tasks.route)
-            }
+            LogInScreen(
+                onSuccess = {navController.navigate(Screen.Tasks.route)},
+                toRegistration = {navController.navigate(Screen.Registration.route)}
+            )
         }
         composable(Screen.Registration.route) {
-            RegistrationScreen {
-                navController.navigate(Screen.Tasks.route)
-            }
+            RegistrationScreen(
+                onSuccess = {
+                    navController.navigate(Screen.Tasks.route)
+                },
+                back = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable(Screen.Tasks.route) {
             TasksScreen(
