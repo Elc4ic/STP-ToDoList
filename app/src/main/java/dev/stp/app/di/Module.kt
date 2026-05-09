@@ -18,10 +18,14 @@ import dev.stp.app.domain.usecases.DeleteTaskUseCase
 import dev.stp.app.domain.usecases.EditTaskUseCase
 import dev.stp.app.domain.usecases.GetAllTaskUseCase
 import dev.stp.app.domain.usecases.GetTaskUseCase
+import dev.stp.app.domain.usecases.LogInUseCase
+import dev.stp.app.domain.usecases.RegistrationUseCase
 import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
+import dev.stp.app.presentation.RegistrationScreen.RegistrationScreen
+import dev.stp.app.presentation.RegistrationScreen.RegistrationViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
 import io.ktor.client.HttpClient
@@ -75,6 +79,12 @@ val dataModule = module {
 val domainModule = module {
 
     factory {
+        LogInUseCase(
+            repository = get()
+        )
+    }
+
+    factory {
         AddTaskUseCase(
             repository = get()
         )
@@ -113,6 +123,11 @@ val domainModule = module {
             repository = get()
         )
     }
+    factory {
+        RegistrationUseCase(
+            repository = get()
+        )
+    }
 
 
 }
@@ -146,6 +161,12 @@ val viewModelModule = module {
             logInUseCase = get()
         )
     }
+   viewModel{
+       RegistrationViewModel(
+           regUseCase = get()
+
+       )
+   }
 }
 
 val networkModule = module {

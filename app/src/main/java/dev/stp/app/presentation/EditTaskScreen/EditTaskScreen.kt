@@ -118,7 +118,6 @@ fun EditScreen(
                                     .padding(end = 32.dp)
                                     .clickable {
                                         viewModel.processCommands(EditCommands.DeleteTask)
-                                        onFinish()
                                     },
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "",
@@ -207,7 +206,6 @@ fun EditScreen(
                         isEnabled = state.isSaveEnabled,
                         onClick = {
                             viewModel.processCommands(EditCommands.Save)
-                            onFinish()
                         }
                     )
                 }
