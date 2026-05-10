@@ -7,11 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.stp.app.domain.usecases.RegistrationUseCase
 import dev.stp.app.presentation.AddTaskScreen.AddTaskScreen
-import dev.stp.app.presentation.LogInScreen.LogInScreen
 import dev.stp.app.presentation.EditTaskScreen.EditScreen
-import dev.stp.app.presentation.RegistrationScreen.RegistrationScreen
 import dev.stp.app.presentation.TasksScreen.TasksScreen
 import java.util.UUID
 
@@ -24,22 +21,6 @@ fun NavGraph() {
         navController = navController,
         startDestination = Screen.Tasks.route,
     ) {
-        composable(Screen.LogIn.route) {
-            LogInScreen(
-                onSuccess = {navController.navigate(Screen.Tasks.route)},
-                toRegistration = {navController.navigate(Screen.Registration.route)}
-            )
-        }
-        composable(Screen.Registration.route) {
-            RegistrationScreen(
-                onSuccess = {
-                    navController.navigate(Screen.Tasks.route)
-                },
-                back = {
-                    navController.popBackStack()
-                }
-            )
-        }
         composable(Screen.Tasks.route) {
             TasksScreen(
                 addTaskClick = {
@@ -49,7 +30,8 @@ fun NavGraph() {
                 notifyClick = {},
                 onTaskClick = { task ->
                     navController.navigate(Screen.EditScreen.createRoute(task.id))
-                }
+                },
+                logInClick = { navController.navigate(Screen.LogIn.route) }
             )
         }
         composable(Screen.AddTask.route) {

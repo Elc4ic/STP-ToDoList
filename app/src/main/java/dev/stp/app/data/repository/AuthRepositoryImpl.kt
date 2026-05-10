@@ -13,6 +13,8 @@ import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.net.UnknownHostException
 
 class AuthRepositoryImpl(
@@ -29,12 +31,16 @@ class AuthRepositoryImpl(
             when (response.status) {
                 HttpStatusCode.OK -> {
                     val authResponse = response.body<AuthResponse>()
-                    tokenManager.saveTokens(authResponse.accessToken, authResponse.refreshToken)
+                    tokenManager.saveTokens(
+                        authResponse.user.login,
+                        authResponse.accessToken,
+                        authResponse.refreshToken
+                    )
                     Result.success(authResponse.user)
                 }
 
-                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
                 HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound().toResult()
+                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
                 else -> AppError.ServerError().toResult()
             }
         } catch (e: Exception) {
@@ -55,9 +61,13 @@ class AuthRepositoryImpl(
             }
 
             when (response.status) {
-                HttpStatusCode.OK -> {
+                HttpStatusCode.Created -> {
                     val authResponse = response.body<AuthResponse>()
-                    tokenManager.saveTokens(authResponse.accessToken, authResponse.refreshToken)
+                    tokenManager.saveTokens(
+                        authResponse.user.login,
+                        authResponse.accessToken,
+                        authResponse.refreshToken
+                    )
                     Result.success(authResponse.user)
                 }
 
@@ -75,6 +85,10 @@ class AuthRepositoryImpl(
             mappedError.toResult()
         }
     }
+
+    override fun isAuthorized(): Flow<Boolean> = tokenManager.accessToken.map { it != null }
+
+    override fun loginName(): Flow<String?> = tokenManager.login
 
     override suspend fun logout() {
         tokenManager.clear()

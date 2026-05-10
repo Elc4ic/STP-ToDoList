@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    //type
+    implementation(libs.androidx.compose.ui.text.google.fonts)
+
     // navigation
     implementation(libs.androidx.navigation.compose)
 

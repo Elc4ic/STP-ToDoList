@@ -1,8 +1,13 @@
 package apiRoutes
 
-const val host = "94.183.185.63"
-const val port = "8080"
+import io.github.cdimascio.dotenv.dotenv
+
+
 sealed class Api(val path: String) {
+    val dotenv = dotenv { ignoreIfMissing = true }
+    val host = dotenv["HOST"] ?: "85.137.167.193"
+    val port = dotenv["PORT"] ?: "8080"
+
     sealed class Auth(path: String) : Api("/api/auth/$path") {
         object Login : Auth("login")
         object Register : Auth("register")

@@ -13,6 +13,7 @@ kotlin {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation(libs.dotenv.kotlin)
     api(libs.serialization.kotlinx.json)
 }
 

@@ -36,8 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
-import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeEnd
-import dev.stp.app.presentation.EditTaskScreen.EditCommands.InputTimeStart
 import dev.stp.app.presentation.components.AppButton
 import dev.stp.app.presentation.components.AppTextField
 import dev.stp.app.presentation.components.DateField
@@ -45,7 +43,6 @@ import dev.stp.app.presentation.components.TaskDatePickerDialog
 import dev.stp.app.presentation.ui.theme.CustomIcons
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.dedmos.todo.presentation.AddTaskScreen.AddCommands
 import java.util.UUID
 
 
@@ -203,11 +200,13 @@ fun EditScreen(
                         )
                     )
                     AppButton(
-                        isEnabled = state.isSaveEnabled,
+                        enabled = state.isSaveEnabled,
                         onClick = {
                             viewModel.processCommands(EditCommands.Save)
                         }
-                    )
+                    ){
+                        Text("Сохранить")
+                    }
                 }
 
             }

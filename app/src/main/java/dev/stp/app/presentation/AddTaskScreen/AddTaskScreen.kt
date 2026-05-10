@@ -142,9 +142,11 @@ fun AddTaskScreen(
                     )
 
                     AppButton(
-                        isEnabled = state.isSaveEnabled,
+                        enabled = state.isSaveEnabled,
                         onClick = { viewModel.processCommand(AddCommands.Save) }
-                    )
+                    ){
+                        Text("Добавить")
+                    }
                 }
             }
 

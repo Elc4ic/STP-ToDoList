@@ -24,7 +24,6 @@ import dev.stp.app.domain.usecases.SearchTaskUseCase
 import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
-import dev.stp.app.presentation.RegistrationScreen.RegistrationScreen
 import dev.stp.app.presentation.RegistrationScreen.RegistrationViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
@@ -35,12 +34,18 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.utils.EmptyContent.contentType
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.Serializable
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -147,7 +152,7 @@ val viewModelModule = module {
         )
     }
 
-    viewModel {parameters->
+    viewModel { parameters ->
         EditTaskViewModel(
             taskId = parameters.get(),
             editTaskUseCase = get(),
@@ -157,24 +162,22 @@ val viewModelModule = module {
     }
 
     viewModel {
-        LogInViewModel (
-            logInUseCase = get()
+        LogInViewModel(
+            logInUseCase = get(),
+            authRepository = get(),
+            syncRepository = get()
         )
     }
-   viewModel{
-       RegistrationViewModel(
-           regUseCase = get()
+    viewModel {
+        RegistrationViewModel(
+            regUseCase = get()
 
-       )
-   }
+        )
+    }
 }
 
 val networkModule = module {
     single { TokenManager(androidContext()) }
-
-    single<AuthRepository> {
-        AuthRepositoryImpl(client = get(), tokenManager = get())
-    }
 
     single {
         HttpClient(Android) {
@@ -182,6 +185,11 @@ val networkModule = module {
                 json()
             }
             install(Logging) { level = LogLevel.BODY }
+
+            defaultRequest {
+                contentType(ContentType.Application.Json)
+                accept(ContentType.Application.Json)
+            }
 
             install(Auth) {
                 bearer {
@@ -203,6 +211,7 @@ val networkModule = module {
                                 markAsRefreshTokenRequest()
                             }.body<AuthResponse>()
                             get<TokenManager>().saveTokens(
+                                response.user.login,
                                 response.accessToken,
                                 response.refreshToken
                             )
@@ -218,5 +227,9 @@ val networkModule = module {
                 }
             }
         }
+    }
+
+    single<AuthRepository> {
+        AuthRepositoryImpl(client = get(), tokenManager = get())
     }
 }

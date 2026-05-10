@@ -33,7 +33,6 @@ fun SearchBar(
                 text = "Search Note",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-
                 )
         },
         colors = TextFieldDefaults.colors(

@@ -2,6 +2,8 @@ package dev.stp.app.presentation.LogInScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.stp.app.domain.repository.AuthRepository
+import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.usecases.LogInUseCase
 import errors.AppError
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,11 +27,19 @@ sealed interface LogInState {
         val isSubmitEnabled: Boolean
             get() = login.isNotBlank() && password.isNotBlank() && !isSubmitting
     }
+
+    data class Authorized(
+        val userName: String,
+        val isSyncing: Boolean = false
+    ) : LogInState
 }
+
 sealed interface LogInCommands {
     data class InputLogin(val value: String) : LogInCommands
     data class InputPassword(val value: String) : LogInCommands
     data object Submit : LogInCommands
+    data object Logout : LogInCommands
+    data object Sync : LogInCommands
 }
 
 sealed interface LogInEvent {
@@ -37,7 +47,9 @@ sealed interface LogInEvent {
 }
 
 class LogInViewModel(
-    private val logInUseCase: LogInUseCase
+    private val logInUseCase: LogInUseCase,
+    private val authRepository: AuthRepository,
+    private val syncRepository: SyncRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LogInState>(LogInState.Content())
@@ -46,11 +58,40 @@ class LogInViewModel(
     private val _event = MutableSharedFlow<LogInEvent>()
     val event = _event.asSharedFlow()
 
-    fun processCommand(command: LogInCommands) {
+    init {
+        viewModelScope.launch {
+            authRepository.isAuthorized().collect { isAuthed ->
+                if (isAuthed) {
+                    authRepository.loginName().collect {
+                        _state.value = LogInState.Authorized(userName = it ?: "User")
+                    }
+
+                } else {
+                    _state.value = LogInState.Content()
+                }
+            }
+        }
+    }
+
+    fun process(command: LogInCommands) {
         when (command) {
-            is LogInCommands.InputLogin -> updateContent { it.copy(login = command.value, loginError = null) }
-            is LogInCommands.InputPassword -> updateContent { it.copy(password = command.value, passwordError = null) }
+            is LogInCommands.InputLogin -> updateContent {
+                it.copy(
+                    login = command.value,
+                    loginError = null
+                )
+            }
+
+            is LogInCommands.InputPassword -> updateContent {
+                it.copy(
+                    password = command.value,
+                    passwordError = null
+                )
+            }
+
             LogInCommands.Submit -> login()
+            LogInCommands.Logout -> viewModelScope.launch { authRepository.logout() }
+            LogInCommands.Sync -> syncData()
         }
     }
 
@@ -77,6 +118,15 @@ class LogInViewModel(
             }
 
             updateContent { it.copy(isSubmitting = false) }
+        }
+    }
+
+    private fun syncData() {
+        val current = _state.value as? LogInState.Authorized ?: return
+        viewModelScope.launch {
+            _state.value = current.copy(isSyncing = true)
+            syncRepository.trySync()
+            _state.value = current.copy(isSyncing = false)
         }
     }
 
