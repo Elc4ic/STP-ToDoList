@@ -6,5 +6,5 @@ import dto.SyncResponse
 interface SyncRepository {
     suspend fun trySync()
     suspend fun processSyncResponse(response: SyncResponse)
-    suspend fun getFromServer(): Result<List<Task>>
+    suspend fun getFromServer(): Result<Unit>
 }

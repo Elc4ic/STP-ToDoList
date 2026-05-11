@@ -40,6 +40,8 @@ sealed interface LogInCommands {
     data object Submit : LogInCommands
     data object Logout : LogInCommands
     data object Sync : LogInCommands
+
+    data object Pull : LogInCommands
 }
 
 sealed interface LogInEvent {
@@ -92,6 +94,7 @@ class LogInViewModel(
             LogInCommands.Submit -> login()
             LogInCommands.Logout -> viewModelScope.launch { authRepository.logout() }
             LogInCommands.Sync -> syncData()
+            LogInCommands.Pull -> pullUp()
         }
     }
 
@@ -126,6 +129,15 @@ class LogInViewModel(
         viewModelScope.launch {
             _state.value = current.copy(isSyncing = true)
             syncRepository.trySync()
+            _state.value = current.copy(isSyncing = false)
+        }
+    }
+
+    private fun pullUp(){
+        val current = _state.value as? LogInState.Authorized ?: return
+        viewModelScope.launch {
+            _state.value = current.copy(isSyncing = true)
+            syncRepository.getFromServer()
             _state.value = current.copy(isSyncing = false)
         }
     }

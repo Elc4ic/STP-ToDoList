@@ -9,7 +9,10 @@ import androidx.work.WorkManager
 import apiRoutes.Api
 import dev.stp.app.data.datasource.SyncWorker
 import dev.stp.app.data.localDB.TaskDao
+import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.data.mapper.safeApiCall
+import dev.stp.app.data.mapper.toDbModel
+import dev.stp.app.data.mapper.toDbModels
 import dev.stp.app.data.mapper.toTasks
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.SyncRepository
@@ -69,7 +72,7 @@ class SyncRepositoryImpl(
         }
     }
 
-    override suspend fun getFromServer(): Result<List<Task>> {
+    override suspend fun getFromServer(): Result<Unit> {
         return safeApiCall<GetTaskResponse>(
             call = { client.post(Api.Tasks.GetAll.url()) },
             mapError = { status ->
@@ -79,7 +82,32 @@ class SyncRepositoryImpl(
                 }
             }
         ).map { response ->
-            response.tasks.toTasks()
+            val tasks = response.tasks.toDbModels()
+            taskDao.addTasks(tasks)
         }
     }
+
+
+// TODO merge
+//    suspend fun syncLocalDatabaseWithServer(serverTasks: List<TaskDbModel>, currentUserId: String) {
+//        taskDao.withTransaction {
+//
+//            val pendingTaskIds = taskDao.getAllNotSyncTaskIds(currentUserId).toSet()
+//
+//            serverTasks.forEach { serverTask ->
+//                if (!pendingTaskIds.contains(serverTask.id)) {
+//                    taskDao.addTask(serverTask.copy(syncStatus = SyncStatus.SYNCHRONIZED))
+//                }
+//            }
+//
+//            val serverTaskIds = serverTasks.map { it.id }.toSet()
+//            val localTasks = taskDao.getAllTasksByUserId(currentUserId)
+//
+//            localTasks.forEach { localTask ->
+//                if (!serverTaskIds.contains(localTask.id) && localTask.syncStatus == SyncStatus.SYNCHRONIZED) {
+//                    taskDao.deleteTask(localTask.id)
+//                }
+//            }
+//        }
+//    }
 }

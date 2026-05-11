@@ -17,11 +17,23 @@ interface TaskDao {
     @Query("SELECT * FROM tasks ORDER BY createdAt DESC")
     fun getAllTask(): Flow<List<TaskDbModel>>
 
-    @Query("SELECT * FROM tasks WHERE syncStatus != 'SYNCHRONIZED'")
+    @Query("SELECT * FROM tasks WHERE  syncStatus != 'SYNCHRONIZED'")
     suspend fun getAllNotSyncTask(): List<TaskDbModel>
+
+//    @Query("SELECT * FROM tasks WHERE userId = :userId AND syncStatus != 'SYNCHRONIZED'")
+//    suspend fun getAllNotSyncTask(userId: String): List<TaskDbModel>
+
+//    @Query("SELECT * FROM tasks WHERE userId = :userId")
+//    suspend fun getAllTasksByUserId(userId: String): List<TaskDbModel>
+
+//    @Query("SELECT id FROM tasks WHERE userId = :userId AND syncStatus != 'SYNCHRONIZED'")
+//    suspend fun getAllNotSyncTaskIds(userId: String): List<UUID>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: TaskDbModel)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTasks(tasks: List<TaskDbModel>)
 
     @Query("DELETE FROM tasks WHERE id == :taskId")
     suspend fun deleteTask(taskId: UUID)
@@ -34,7 +46,7 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET syncStatus = :status WHERE id = :taskId")
     fun updateSyncStatus(taskId: UUID, status: SyncStatus)
-    
+
     @Query(
         """
         SELECT DISTINCT *  FROM tasks
@@ -44,5 +56,8 @@ interface TaskDao {
         """
     )
     fun searchTask(query: String): Flow<List<TaskDbModel>>
+
+    @Transaction
+    suspend fun withTransaction(block: suspend () -> Unit) = block()
 
 }
