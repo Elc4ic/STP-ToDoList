@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import enums.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -14,28 +15,34 @@ interface TaskDao {
 
     @Transaction
     @Query("SELECT * FROM tasks ORDER BY createdAt DESC")
-     fun getAllTask() : Flow<List<TaskDbModel>>
+    fun getAllTask(): Flow<List<TaskDbModel>>
 
     @Query("SELECT * FROM tasks WHERE syncStatus != 'SYNCHRONIZED'")
-    suspend fun getAllNotSyncTask() : List<TaskDbModel>
+    suspend fun getAllNotSyncTask(): List<TaskDbModel>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: TaskDbModel)
 
     @Query("DELETE FROM tasks WHERE id == :taskId")
-    suspend fun deleteTask(taskId:UUID)
+    suspend fun deleteTask(taskId: UUID)
 
     @Query("SELECT * FROM tasks WHERE id == :taskId")
-    suspend fun getTask(taskId: UUID) : TaskDbModel
+    suspend fun getTask(taskId: UUID): TaskDbModel
 
     @Query("UPDATE tasks SET isPinned = NOT isPinned WHERE id = :taskId")
-    fun switchPinned(taskId:UUID)
+    fun switchPinned(taskId: UUID)
 
-    @Query("""
+    @Query("UPDATE tasks SET syncStatus = :status WHERE id = :taskId")
+    fun updateSyncStatus(taskId: UUID, status: SyncStatus)
+    
+    @Query(
+        """
         SELECT DISTINCT *  FROM tasks
         WHERE title LIKE '%' || :query || '%' 
         OR content LIKE '%' || :query || '%' 
         ORDER BY createdAt DESC
-        """)
+        """
+    )
     fun searchTask(query: String): Flow<List<TaskDbModel>>
 
 }

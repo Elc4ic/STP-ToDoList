@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,21 +25,21 @@ import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.presentation.ui.theme.CustomIcons
+import enums.SyncStatus
 
 @Composable
 fun TaskCard(
     modifier: Modifier = Modifier,
     onTaskClick: (Task) -> Unit,
     task: Task,
-    onLongClick : (Task) ->Unit
-){
-
+    onLongClick: (Task) -> Unit
+) {
     Column(
         modifier = modifier
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
             .combinedClickable(
-                onClick ={
+                onClick = {
                     onTaskClick(task)
                 },
                 onLongClick = {
@@ -44,7 +47,7 @@ fun TaskCard(
                 }
             )
             .clip(RoundedCornerShape(8.dp))
-            .background(color = MaterialTheme.colorScheme.primary )
+            .background(color = MaterialTheme.colorScheme.primary)
             .padding(16.dp)
 
     ) {
@@ -70,20 +73,31 @@ fun TaskCard(
         ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Text(
-                    text = "${DateFormater.formatDateFromMillis(task.createdAt)} - ${DateFormater.formatDateFromMillis(task.deadline)} ",
+                    text = "${DateFormater.formatDateFromMillis(task.createdAt)} - ${
+                        DateFormater.formatDateFromMillis(
+                            task.deadline
+                        )
+                    } ",
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.W400,
                     fontSize = 10.sp
                 )
             }
-            if(task.isPinned){
+            if (task.isPinned) {
                 Icon(
                     imageVector = CustomIcons.Pinned,
                     contentDescription = "pinned",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-
+            Icon(
+                imageVector = when (task.syncStatus) {
+                    SyncStatus.SYNCHRONIZED -> Icons.Default.Check
+                    else -> Icons.Default.Sync
+                },
+                contentDescription = "sync",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
         }
     }
 }

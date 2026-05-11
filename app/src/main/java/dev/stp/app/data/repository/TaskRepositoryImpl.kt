@@ -51,7 +51,6 @@ class TaskRepositoryImpl(
                 syncStatus = SyncStatus.PENDING_DELETE
             )
         )
-        taskDao.deleteTask(taskId)
         notificationRepository.cancelDeadlineNotification(taskId)
     }
 

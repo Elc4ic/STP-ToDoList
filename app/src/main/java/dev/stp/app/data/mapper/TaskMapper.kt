@@ -9,10 +9,10 @@ import java.util.UUID
 import kotlin.uuid.Uuid
 
 fun Task.toDbModel() =
-    TaskDbModel(id, title, content, isPinned, createdAt,updatedAt, deadline, SyncStatus.valueOf(syncStatus))
+    TaskDbModel(id, title, content, isPinned, createdAt,updatedAt, deadline, syncStatus)
 
 fun Task.toDto()=
-    TaskDto(id.toString(), title, content, isPinned, createdAt, updatedAt, deadline, syncStatus)
+    TaskDto(id.toString(), title, content, isPinned, createdAt, updatedAt, deadline, syncStatus.name)
 
 fun List<Task>.toDto(): List<TaskDto> {
     return map { it.toDto() }
@@ -20,7 +20,7 @@ fun List<Task>.toDto(): List<TaskDto> {
 
 
 fun TaskDbModel.toEntity() =
-    Task(id, title, content, isPinned, createdAt,updatedAt, deadline, syncStatus.name)
+    Task(id, title, content, isPinned, createdAt,updatedAt, deadline, syncStatus)
 
 fun List<TaskDbModel>.toEntity(): List<Task> {
     return map { it.toEntity() }

@@ -2,6 +2,7 @@
 # Build Tools & Plugins
 agp = "9.1.1"
 dotenvKotlin = "6.4.1"
+koinAndroidxWorkmanager = "3.5.6"
 kotlin = "2.3.20"
 ksp = "2.3.4"
 
@@ -82,6 +83,7 @@ insert-koin-koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koi
 insert-koin-koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # Ktor Client (Android)
+koin-androidx-workmanager = { module = "io.insert-koin:koin-androidx-workmanager", version.ref = "koin" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }

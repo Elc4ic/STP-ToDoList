@@ -29,17 +29,18 @@ class PostgresTaskRepository : TaskRepository {
     }
 
     override suspend fun update(userId: UUID, dto: TaskDto): String = dbQuery {
+        val taskUuid = UUID.fromString(dto.id)
         val serverTask = TasksTable.selectAll()
-            .where { TasksTable.id eq UUID.fromString(dto.id) }.singleOrNull()
-        //TODO потом доделаю
+            .where { TasksTable.id eq taskUuid }.singleOrNull()
         if (serverTask != null) {
             val serverUpdatedAt = serverTask[TasksTable.updatedAt]
 
             if (dto.updatedAt > serverUpdatedAt) {
-                TasksTable.update({ (TasksTable.id eq UUID.fromString(dto.id)) and (TasksTable.userId eq userId) }) {
+                TasksTable.update({ (TasksTable.id eq taskUuid) and (TasksTable.userId eq userId) }) {
                     it[title] = dto.title
                     it[content] = dto.content
                     it[isPinned] = dto.isPinned
+                    it[updatedAt] = dto.updatedAt
                     it[deadline] = dto.deadline
                 }
             }
@@ -48,12 +49,15 @@ class PostgresTaskRepository : TaskRepository {
     }
 
     override suspend fun insert(userId: UUID, dto: TaskDto): String = dbQuery {
+        print("insert")
         TasksTable.insertAndGetId {
+            it[id] = UUID.fromString(dto.id)
             it[TasksTable.userId] = userId
             it[title] = dto.title
             it[content] = dto.content
             it[isPinned] = dto.isPinned
             it[createdAt] = dto.createdAt
+            it[updatedAt] = dto.updatedAt
             it[deadline] = dto.deadline
         }.value.toString()
     }

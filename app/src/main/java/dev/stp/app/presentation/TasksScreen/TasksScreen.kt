@@ -49,7 +49,6 @@ fun TasksScreen(
     addTaskClick: () -> Unit,
     notifyClick: () -> Unit,
     settingsClick: () -> Unit,
-    logInClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var showAuthSheet by remember { mutableStateOf(false) }
