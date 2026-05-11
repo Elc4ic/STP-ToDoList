@@ -9,10 +9,19 @@ import java.util.UUID
 import kotlin.uuid.Uuid
 
 fun Task.toDbModel() =
-    TaskDbModel(id, title, content, isPinned, createdAt,updatedAt, deadline, syncStatus)
+    TaskDbModel(id, title, content, isPinned, createdAt, updatedAt, deadline, syncStatus)
 
-fun Task.toDto()=
-    TaskDto(id.toString(), title, content, isPinned, createdAt, updatedAt, deadline, syncStatus.name)
+fun Task.toDto() =
+    TaskDto(
+        id.toString(),
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        syncStatus.name
+    )
 
 fun List<Task>.toDto(): List<TaskDto> {
     return map { it.toDto() }
@@ -20,18 +29,49 @@ fun List<Task>.toDto(): List<TaskDto> {
 
 
 fun TaskDbModel.toEntity() =
-    Task(id, title, content, isPinned, createdAt,updatedAt, deadline, syncStatus)
+    Task(id, title, content, isPinned, createdAt, updatedAt, deadline, syncStatus)
 
 fun List<TaskDbModel>.toEntity(): List<Task> {
     return map { it.toEntity() }
 }
 
 fun TaskDbModel.toDto() =
-    TaskDto(id.toString(), title, content, isPinned, createdAt,updatedAt, deadline, syncStatus = syncStatus.name)
+    TaskDto(
+        id.toString(),
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        syncStatus = syncStatus.name
+    )
 
 
+fun TaskDto.toDbModel() =
+    TaskDbModel(
+        UUID.fromString(id),
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        SyncStatus.valueOf(syncStatus)
+    )
 
+fun List<TaskDto>.toDbModels() = this.map { it.toDbModel() }
 
+fun TaskDto.toTask() =
+    Task(
+        UUID.fromString(id),
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        SyncStatus.valueOf(syncStatus)
+    )
 
-fun TaskDto.toDbModel(newStatus: SyncStatus) =
-    TaskDbModel(UUID.fromString(id), title, content, isPinned, createdAt, updatedAt, deadline, newStatus)
+fun List<TaskDto>.toTasks() = this.map { it.toTask() }

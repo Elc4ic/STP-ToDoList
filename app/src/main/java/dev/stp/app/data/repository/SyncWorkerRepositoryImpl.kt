@@ -6,17 +6,27 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import apiRoutes.Api
 import dev.stp.app.data.datasource.SyncWorker
 import dev.stp.app.data.localDB.TaskDao
+import dev.stp.app.data.mapper.safeApiCall
+import dev.stp.app.data.mapper.toTasks
+import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.SyncRepository
+import dto.GetTaskResponse
 import dto.SyncResponse
 import enums.ResultCode
 import enums.SyncStatus
+import errors.AppError
+import io.ktor.client.HttpClient
+import io.ktor.client.request.post
+import io.ktor.http.HttpStatusCode
 import java.util.UUID
 
 class SyncRepositoryImpl(
     private val context: Context,
-    private val taskDao: TaskDao
+    private val taskDao: TaskDao,
+    private val client: HttpClient,
 ) : SyncRepository {
 
     override suspend fun trySync() {
@@ -56,6 +66,20 @@ class SyncRepositoryImpl(
 
                 ResultCode.ERROR -> {}
             }
+        }
+    }
+
+    override suspend fun getFromServer(): Result<List<Task>> {
+        return safeApiCall<GetTaskResponse>(
+            call = { client.post(Api.Tasks.GetAll.url()) },
+            mapError = { status ->
+                when (status) {
+                    HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound()
+                    else -> null
+                }
+            }
+        ).map { response ->
+            response.tasks.toTasks()
         }
     }
 }
