@@ -31,7 +31,6 @@ fun NavGraph() {
                 onTaskClick = { task ->
                     navController.navigate(Screen.EditScreen.createRoute(task.id))
                 },
-                logInClick = { navController.navigate(Screen.LogIn.route) }
             )
         }
         composable(Screen.AddTask.route) {

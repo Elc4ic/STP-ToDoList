@@ -4,6 +4,8 @@ import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDataBase
 import androidx.room.Room
 import apiRoutes.Api
+import dev.stp.app.data.datasource.DeadlineNotificationWorker
+import dev.stp.app.data.datasource.SyncWorker
 import dev.stp.app.data.datasource.TokenManager
 import dev.stp.app.data.repository.AuthRepositoryImpl
 import dev.stp.app.data.repository.NotificationRepositoryImpl
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
 import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskViewModel
 
@@ -67,7 +70,12 @@ val dataModule = module {
         get<TaskDataBase>().taskDao()
     }
 
-    single<SyncRepository> { SyncRepositoryImpl(androidContext()) }
+    single<SyncRepository> {
+        SyncRepositoryImpl(
+            context = androidContext(),
+            taskDao = get()
+        )
+    }
 
     single<NotificationRepository> { NotificationRepositoryImpl(androidContext()) }
 
@@ -133,8 +141,11 @@ val domainModule = module {
             repository = get()
         )
     }
+}
 
-
+val workerModule = module {
+    worker { DeadlineNotificationWorker(get(), get()) }
+    worker { SyncWorker(get(), get(), get(), get(), get()) }
 }
 val viewModelModule = module {
 

@@ -2,6 +2,7 @@ package dev.stp.routes
 
 import apiRoutes.Api
 import dev.stp.service.TaskService
+import dev.stp.service.UserService
 import dto.SyncRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.jwt.JWTPrincipal
@@ -11,15 +12,16 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
+import org.koin.ktor.ext.get
 import org.koin.ktor.ext.inject
 import java.util.UUID
 
-fun RoutingContext.getUserId() = call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.toString()
+fun RoutingContext.getUserId() = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
 
 fun Route.taskRoutes() {
-    val taskService by inject<TaskService>()
 
     post(Api.Tasks.Sync.path) {
+        val taskService = call.application.get<TaskService>()
         val userId = getUserId() ?: return@post call.respond(HttpStatusCode.Unauthorized)
         val uuid = UUID.fromString(userId)
 
@@ -29,6 +31,7 @@ fun Route.taskRoutes() {
     }
 
     post(Api.Tasks.GetAll.path) {
+        val taskService = call.application.get<TaskService>()
         val userId = getUserId() ?: return@post call.respond(HttpStatusCode.Unauthorized)
         val uuid = UUID.fromString(userId)
 

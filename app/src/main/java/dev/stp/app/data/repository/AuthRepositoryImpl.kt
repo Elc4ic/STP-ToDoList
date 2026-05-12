@@ -2,6 +2,7 @@ package dev.stp.app.data.repository
 
 import apiRoutes.Api
 import dev.stp.app.data.datasource.TokenManager
+import dev.stp.app.data.mapper.safeApiCall
 import dev.stp.app.domain.repository.AuthRepository
 import dto.AuthRequest
 import dto.AuthResponse
@@ -23,66 +24,48 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     override suspend fun login(login: String, password: String): Result<UserDto> {
-        return try {
-            val response = client.post(Api.Auth.Login.url()) {
-                setBody(AuthRequest(login, password))
-            }
-
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val authResponse = response.body<AuthResponse>()
-                    tokenManager.saveTokens(
-                        authResponse.user.login,
-                        authResponse.accessToken,
-                        authResponse.refreshToken
-                    )
-                    Result.success(authResponse.user)
+        return safeApiCall<AuthResponse>(
+            call = {
+                client.post(Api.Auth.Login.url()) {
+                    setBody(AuthRequest(login, password))
                 }
-
-                HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound().toResult()
-                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
-                else -> AppError.ServerError().toResult()
+            },
+            mapError = { status ->
+                when (status) {
+                    HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound()
+                    else -> null
+                }
             }
-        } catch (e: Exception) {
-            val mappedError = when (e) {
-                is ConnectTimeoutException,
-                is UnknownHostException -> AppError.NetworkError()
-
-                else -> AppError.Unknown(e.message ?: "Unknown error")
-            }
-            mappedError.toResult()
+        ).map { response ->
+            tokenManager.saveTokens(
+                response.user.login,
+                response.accessToken,
+                response.refreshToken
+            )
+            response.user
         }
     }
 
     override suspend fun register(login: String, password: String): Result<UserDto> {
-        return try {
-            val response = client.post(Api.Auth.Register.url()) {
-                setBody(AuthRequest(login, password))
-            }
-
-            when (response.status) {
-                HttpStatusCode.Created -> {
-                    val authResponse = response.body<AuthResponse>()
-                    tokenManager.saveTokens(
-                        authResponse.user.login,
-                        authResponse.accessToken,
-                        authResponse.refreshToken
-                    )
-                    Result.success(authResponse.user)
+        return safeApiCall<AuthResponse>(
+            call = {
+                client.post(Api.Auth.Register.url()) {
+                    setBody(AuthRequest(login, password))
                 }
-
-                HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials().toResult()
-                HttpStatusCode.Conflict -> AppError.Auth.Server.UserAlreadyExists(login).toResult()
-                else -> AppError.ServerError().toResult()
+            },
+            mapError = { status ->
+                when (status) {
+                    HttpStatusCode.Conflict -> AppError.Auth.Server.UserAlreadyExists(login)
+                    else -> null
+                }
             }
-        } catch (e: Exception) {
-            val mappedError = when (e) {
-                is ConnectTimeoutException,
-                is UnknownHostException -> AppError.NetworkError()
-
-                else -> AppError.Unknown(e.message ?: "Неизвестная ошибка")
-            }
-            mappedError.toResult()
+        ).map { response ->
+            tokenManager.saveTokens(
+                response.user.login,
+                response.accessToken,
+                response.refreshToken
+            )
+            response.user
         }
     }
 

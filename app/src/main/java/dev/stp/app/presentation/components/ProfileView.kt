@@ -41,11 +41,21 @@ fun ProfileView(
         else Text("Синхронизировать с сервером")
     }
 
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Button(
+        onClick = { viewModel.process(LogInCommands.Sync) },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+    ) {
+        if (state.isSyncing) CircularProgressIndicator(color = Color.White)
+        else Text("Загрузить задачи с сервера")
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+
     OutlinedButton(
         onClick = { viewModel.process(LogInCommands.Logout) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Text("Выйти из аккаунта", color = MaterialTheme.colorScheme.error)
     }

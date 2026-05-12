@@ -1,5 +1,6 @@
 package dev.stp.service
 
+import apiRoutes.Api
 import dev.stp.domain.repository.TaskRepository
 import dev.stp.domain.repository.UserRepository
 import dev.stp.infrastructure.schema.TasksTable
@@ -8,6 +9,7 @@ import dto.SyncRequest
 import dto.SyncResponse
 import dto.SyncTaskResponse
 import enums.ResultCode
+import enums.SyncStatus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -27,10 +29,10 @@ class TaskServiceImpl(
     override suspend fun sync(userId: UUID, request: SyncRequest): SyncResponse {
         return SyncResponse(request.unsyncTasks.map { dto ->
             try {
-                val remoteId = when (dto.syncStatus) {
-                    "PENDING_DELETE" -> taskRepository.delete(userId, dto)
-                    "PENDING_UPDATE" -> taskRepository.update(userId, dto)
-                    "PENDING_INSERT" -> taskRepository.insert(userId, dto)
+                when (SyncStatus.valueOf(dto.syncStatus)) {
+                    SyncStatus.PENDING_DELETE -> taskRepository.delete(userId, dto)
+                    SyncStatus.PENDING_UPDATE -> taskRepository.update(userId, dto)
+                    SyncStatus.PENDING_INSERT -> taskRepository.insert(userId, dto)
                     else -> dto.id
                 }
                 SyncTaskResponse(
@@ -38,6 +40,7 @@ class TaskServiceImpl(
                     status = ResultCode.SUCCESS.toString()
                 )
             } catch (e: Exception) {
+                print(e)
                 SyncTaskResponse(dto.id, ResultCode.ERROR.toString())
             }
         })
