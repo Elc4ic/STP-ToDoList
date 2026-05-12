@@ -43,6 +43,130 @@ class ServerTest {
             val body = response.body<AuthResponse>()
             assertEquals("testUser", body.user.login)
         }
-    }
 
+        @Test
+        fun `test register empty password`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUserEmpty", ""))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register empty login`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("", "12345"))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register empty login and password`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("", ""))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register exist user`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "123456"))
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "12345678"))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test login success`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+
+        @Test
+        fun `test login not-exist user`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("test", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+    }
 }
