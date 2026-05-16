@@ -10,7 +10,7 @@ import java.util.UUID
 data class TaskDbModel(
     @PrimaryKey
     val id: UUID,
-//    val userId: UUID,
+    val userId: UUID?,
     val title: String,
     val content: String,
     val isPinned: Boolean,

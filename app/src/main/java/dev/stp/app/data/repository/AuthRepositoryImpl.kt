@@ -2,6 +2,7 @@ package dev.stp.app.data.repository
 
 import apiRoutes.Api
 import dev.stp.app.data.datasource.TokenManager
+import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.mapper.safeApiCall
 import dev.stp.app.domain.repository.AuthRepository
 import dto.AuthRequest
@@ -20,6 +21,7 @@ import java.net.UnknownHostException
 
 class AuthRepositoryImpl(
     private val client: HttpClient,
+    private val taskDao: TaskDao,
     private val tokenManager: TokenManager
 ) : AuthRepository {
 
@@ -38,7 +40,7 @@ class AuthRepositoryImpl(
             }
         ).map { response ->
             tokenManager.saveTokens(
-                response.user.login,
+                response.user,
                 response.accessToken,
                 response.refreshToken
             )
@@ -61,7 +63,7 @@ class AuthRepositoryImpl(
             }
         ).map { response ->
             tokenManager.saveTokens(
-                response.user.login,
+                response.user,
                 response.accessToken,
                 response.refreshToken
             )
@@ -74,6 +76,7 @@ class AuthRepositoryImpl(
     override fun loginName(): Flow<String?> = tokenManager.login
 
     override suspend fun logout() {
+        taskDao.clearAll()
         tokenManager.clear()
     }
 }
