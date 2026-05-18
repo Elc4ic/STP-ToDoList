@@ -20,20 +20,14 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE  syncStatus != 'SYNCHRONIZED'")
     suspend fun getAllNotSyncTask(): List<TaskDbModel>
 
-//    @Query("SELECT * FROM tasks WHERE userId = :userId AND syncStatus != 'SYNCHRONIZED'")
-//    suspend fun getAllNotSyncTask(userId: String): List<TaskDbModel>
+    @Query("SELECT * FROM tasks WHERE userId = :userId")
+    suspend fun getAllTasksByUserId(userId: UUID): List<TaskDbModel>
 
-//    @Query("SELECT * FROM tasks WHERE userId = :userId")
-//    suspend fun getAllTasksByUserId(userId: String): List<TaskDbModel>
-
-//    @Query("SELECT id FROM tasks WHERE userId = :userId AND syncStatus != 'SYNCHRONIZED'")
-//    suspend fun getAllNotSyncTaskIds(userId: String): List<UUID>
+    @Query("SELECT id FROM tasks WHERE userId = :userId AND syncStatus != 'SYNCHRONIZED'")
+    suspend fun getAllNotSyncTaskIdsByUserId(userId:UUID): List<UUID>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: TaskDbModel)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addTasks(tasks: List<TaskDbModel>)
 
     @Query("DELETE FROM tasks WHERE id == :taskId")
     suspend fun deleteTask(taskId: UUID)
@@ -56,6 +50,9 @@ interface TaskDao {
         """
     )
     fun searchTask(query: String): Flow<List<TaskDbModel>>
+
+    @Query("DELETE FROM tasks")
+    suspend fun clearAll()
 
     @Transaction
     suspend fun withTransaction(block: suspend () -> Unit) = block()
