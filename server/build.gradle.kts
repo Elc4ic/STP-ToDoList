@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.dotenv.kotlin)
     implementation(project(":shared"))
 
+    implementation(libs.arrow.core)
+
     testImplementation(kotlin("test"))
     testImplementation(libs.server.testHost)
 }

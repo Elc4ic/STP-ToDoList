@@ -16,23 +16,18 @@ fun Route.authRoutes() {
     post(Api.Auth.Register.path) {
         val userService = call.application.get<UserService>()
         val request = call.receive<AuthRequest>()
-        val response = userService.register(request)
-        call.respond(HttpStatusCode.Created, response)
+        call.respondEither(userService.register(request), HttpStatusCode.Created)
     }
 
     post(Api.Auth.Login.path) {
         val userService = call.application.get<UserService>()
         val request = call.receive<AuthRequest>()
-        val response = userService.authenticate(request)
-        call.respond(status = HttpStatusCode.OK, response)
+        call.respondEither(userService.authenticate(request), HttpStatusCode.OK)
     }
 
     post(Api.Auth.Refresh.path) {
         val userService = call.application.get<UserService>()
         val refreshToken = call.receive<String>()
-        val response = userService.refresh(refreshToken)
-
-        if (response != null) call.respond(response)
-        else call.respond(HttpStatusCode.Unauthorized)
+        call.respondEither(userService.refresh(refreshToken), HttpStatusCode.OK)
     }
 }

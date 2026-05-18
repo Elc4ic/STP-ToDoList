@@ -73,7 +73,9 @@ val dataModule = module {
     single<SyncRepository> {
         SyncRepositoryImpl(
             context = androidContext(),
-            taskDao = get()
+            taskDao = get(),
+            client = get(),
+            tokenManager = get()
         )
     }
 
@@ -83,11 +85,16 @@ val dataModule = module {
         TaskRepositoryImpl(
             taskDao = get(),
             syncRepository = get(),
-            notificationRepository = get()
+            notificationRepository = get(),
+            tokenManager = get()
         )
     }
 
-    single<AuthRepository> { AuthRepositoryImpl(get(), get()) }
+    single<AuthRepository> {
+        AuthRepositoryImpl(
+            get(), get(), get()
+        )
+    }
 }
 val domainModule = module {
 
@@ -148,7 +155,6 @@ val workerModule = module {
     worker { SyncWorker(get(), get(), get(), get(), get()) }
 }
 val viewModelModule = module {
-
     viewModel {
         TaskViewModel(
             getAllTaskUseCase = get(),
@@ -222,7 +228,7 @@ val networkModule = module {
                                 markAsRefreshTokenRequest()
                             }.body<AuthResponse>()
                             get<TokenManager>().saveTokens(
-                                response.user.login,
+                                response.user,
                                 response.accessToken,
                                 response.refreshToken
                             )
@@ -241,6 +247,10 @@ val networkModule = module {
     }
 
     single<AuthRepository> {
-        AuthRepositoryImpl(client = get(), tokenManager = get())
+        AuthRepositoryImpl(
+            client = get(),
+            tokenManager = get(),
+            taskDao = get()
+        )
     }
 }

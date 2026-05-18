@@ -1,42 +1,38 @@
 package dev.stp.routes
 
 import apiRoutes.Api
+import arrow.core.raise.context.bind
+import arrow.core.raise.either
 import dev.stp.service.TaskService
-import dev.stp.service.UserService
 import dto.SyncRequest
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
-import org.koin.ktor.ext.inject
-import java.util.UUID
-
-fun RoutingContext.getUserId() = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
 
 fun Route.taskRoutes() {
 
     post(Api.Tasks.Sync.path) {
         val taskService = call.application.get<TaskService>()
-        val userId = getUserId() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        val uuid = UUID.fromString(userId)
-
         val request = call.receive<SyncRequest>()
-        val response = taskService.sync(uuid, request)
-        call.respond(response)
+        val result = either {
+            val uuid = getUserUuid().bind()
+            taskService.sync(uuid, request)
+        }
+
+        call.respondEither(result, HttpStatusCode.OK)
     }
 
     post(Api.Tasks.GetAll.path) {
         val taskService = call.application.get<TaskService>()
-        val userId = getUserId() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        val uuid = UUID.fromString(userId)
 
-        val response = taskService.getAll(uuid)
-        call.respond(response)
+        val result = either {
+            val uuid = getUserUuid().bind()
+            taskService.getAll(uuid).bind()
+        }
+
+        call.respondEither(result, HttpStatusCode.OK)
     }
 }
 
