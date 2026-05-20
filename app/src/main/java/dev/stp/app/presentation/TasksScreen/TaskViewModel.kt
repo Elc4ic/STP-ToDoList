@@ -5,9 +5,9 @@ package dev.stp.app.presentation.TasksScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
-import dev.stp.app.domain.usecases.GetAllTaskUseCase
-import dev.stp.app.domain.usecases.SearchTaskUseCase
-import dev.stp.app.domain.usecases.SwitchPinnedUseCase
+import dev.stp.app.domain.repository.TaskRepository
+import dev.stp.app.domain.actions.getVisibleTask
+import errors.AppError
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,13 +26,12 @@ sealed interface TasksCommands {
 data class ScreenState(
     val query: String = "",
     val pinnedTasks: List<Task> = listOf(),
-    val tasks: List<Task> = listOf()
+    val tasks: List<Task> = listOf(),
+    val generalError: String? = null
 )
 
 class TaskViewModel(
-    private val getAllTaskUseCase: GetAllTaskUseCase,
-    private val switchPinnedUseCase: SwitchPinnedUseCase,
-    private val searchTaskUseCase: SearchTaskUseCase,
+    private val taskRepository: TaskRepository
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
@@ -40,33 +39,57 @@ class TaskViewModel(
     val state = _state.asStateFlow()
 
     init {
-        query
-            .onEach { input ->
-                _state.update { it.copy(query = input) }
-            }
-            .flatMapLatest {
-                if (it.isBlank()) getAllTaskUseCase()
-                else searchTaskUseCase(it)
-            }
-            .onEach { tasks ->
-                val pinnedTask = tasks.filter { it.isPinned }
-                val tasks = tasks.filter { !it.isPinned }
-                _state.update { it.copy(pinnedTasks = pinnedTask, tasks = tasks) }
-            }
-            .launchIn(viewModelScope)
+        with(taskRepository) {
+            query
+                .onEach { input ->
+                    _state.update { it.copy(query = input) }
+                }
+                .flatMapLatest { input ->
+                    if (input.isBlank()) getVisibleTask()
+                    else searchTask(input)
+                }
+                .onEach { either ->
+                    either.fold(
+                        ifLeft = { error ->
+                            _state.update {
+                                it.copy(
+                                    generalError = error.message,
+                                    pinnedTasks = emptyList(),
+                                    tasks = emptyList()
+                                )
+                            }
+                        },
+                        ifRight = { tasks ->
+                            val pinned = tasks.filter { it.isPinned }
+                            val unpinned = tasks.filter { !it.isPinned }
+                            _state.update {
+                                it.copy(
+                                    pinnedTasks = pinned,
+                                    tasks = unpinned,
+                                    generalError = null
+                                )
+                            }
+                        }
+                    )
+                }
+                .launchIn(viewModelScope)
+        }
     }
 
     fun processCommand(command: TasksCommands) {
-        viewModelScope.launch {
-            when (command) {
-                is TasksCommands.InputQuery -> {
-                    query.update { command.query.trim() }
-                }
+        with(taskRepository) {
+            viewModelScope.launch {
+                when (command) {
+                    is TasksCommands.InputQuery -> {
+                        query.update { command.query.trim() }
+                    }
 
-                is TasksCommands.SwitchPinned -> {
-                    switchPinnedUseCase(command.taskId)
+                    is TasksCommands.SwitchPinned -> {
+                        switchPinned(command.taskId)
+                    }
                 }
             }
         }
+
     }
 }

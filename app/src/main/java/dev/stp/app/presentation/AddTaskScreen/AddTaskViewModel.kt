@@ -2,7 +2,7 @@ package ru.dedmos.todo.presentation.AddTaskScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.stp.app.domain.usecases.AddTaskUseCase
+import dev.stp.app.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -37,7 +37,7 @@ sealed interface AddScreenEvent {
 }
 
 class AddTaskViewModel(
-    private val addTaskUseCase: AddTaskUseCase
+    private val taskRepository: TaskRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow<AddScreenState>(AddScreenState.Creation())
     val state = _state.asStateFlow()
@@ -63,19 +63,21 @@ class AddTaskViewModel(
     }
 
     private fun saveTask() {
-        val currentState = _state.value
-        if (currentState !is AddScreenState.Creation || !currentState.isSaveEnabled) return
+        with(taskRepository) {
+            val currentState = _state.value
+            if (currentState !is AddScreenState.Creation || !currentState.isSaveEnabled) return
 
-        viewModelScope.launch {
-            _state.value = AddScreenState.Loading
-            addTaskUseCase(
-                title = currentState.title,
-                content = currentState.content,
-                isPinned = false,
-                createdAt = currentState.createdAt,
-                deadline = currentState.deadline
-            )
-            _event.emit(AddScreenEvent.Finish)
+            viewModelScope.launch {
+                _state.value = AddScreenState.Loading
+                addTask(
+                    title = currentState.title,
+                    content = currentState.content,
+                    isPinned = false,
+                    createdAt = currentState.createdAt,
+                    deadline = currentState.deadline
+                )
+                _event.emit(AddScreenEvent.Finish)
+            }
         }
     }
 }

@@ -56,7 +56,7 @@ class TaskServiceImpl(
 
     override suspend fun getAll(userId: UUID): Either<AppError, GetTaskResponse> = either {
         val tasks = Either.catch { taskRepository.getAllByUserId(userId) }
-            .mapLeft { AppError.Task.Server.DatabaseError() }
+            .mapLeft { AppError.Server.DB.NotFound() }
             .bind()
 
         GetTaskResponse(tasks.map { it.toDto() })

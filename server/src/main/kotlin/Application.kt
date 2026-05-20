@@ -6,7 +6,6 @@ import dev.stp.plugins.configureLogging
 import dev.stp.plugins.configureRouting
 import dev.stp.plugins.configureSecurity
 import dev.stp.plugins.configureSerialization
-import dev.stp.plugins.configureStatusPages
 import io.ktor.server.application.Application
 
 fun Application.module() {
@@ -16,7 +15,6 @@ fun Application.module() {
     configureLogging()
     configureSerialization()
     configureDI()
-    configureStatusPages()
     configureSecurity(jwtName)
     configureRouting(jwtName)
 }

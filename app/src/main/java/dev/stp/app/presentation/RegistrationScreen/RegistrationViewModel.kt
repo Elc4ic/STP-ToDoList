@@ -2,7 +2,8 @@ package dev.stp.app.presentation.RegistrationScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.stp.app.domain.usecases.RegistrationUseCase
+import dev.stp.app.domain.repository.AuthRepository
+import dev.stp.app.domain.actions.registrate
 import errors.AppError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ sealed interface RegistrationEvent {
 }
 
 class RegistrationViewModel(
-    private val regUseCase: RegistrationUseCase
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<RegistrationState>(RegistrationState.Content())
@@ -74,32 +75,30 @@ class RegistrationViewModel(
     }
 
     private fun registrate() {
-        val currentState = _state.value as? RegistrationState.Content ?: return
-        if (!currentState.isSubmitEnabled) return
+        with(authRepository) {
+            val currentState = _state.value as? RegistrationState.Content ?: return
+            if (!currentState.isSubmitEnabled) return
 
-        viewModelScope.launch {
-            updateContent { it.copy(isSubmitting = true, generalError = null) }
+            viewModelScope.launch {
+                updateContent { it.copy(isSubmitting = true, generalError = null) }
 
-            val result = regUseCase(currentState.login, currentState.password)
-
-            result.onSuccess {
-                _event.emit(RegistrationEvent.NavigateToHome)
-            }.onFailure { throwable ->
-                val error = (throwable as? AppError)
-                handleError(error)
+                val result = registrate(currentState.login, currentState.password)
+                result.fold(
+                    ifLeft = { error -> handleError(error) },
+                    ifRight = { _event.emit(RegistrationEvent.NavigateToHome) }
+                )
+                updateContent { it.copy(isSubmitting = false) }
             }
-
-            updateContent { it.copy(isSubmitting = false) }
         }
     }
 
     private fun handleError(error: AppError?) {
         updateContent { prevState ->
             when (error) {
-                is AppError.Auth.Client.LoginFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.Client.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.Client.PasswordTooShort -> prevState.copy(passwordError = error.message)
-                is AppError.Auth.Server.UserAlreadyExists -> prevState.copy(loginError = error.message)
+                is AppError.Client.Auth.LoginFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Client.Auth.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Client.Auth.PasswordTooShort -> prevState.copy(passwordError = error.message)
+                is AppError.Server.Auth.UserAlreadyExists -> prevState.copy(loginError = error.message)
                 is AppError.NetworkError -> prevState.copy(generalError = error.message)
                 else -> prevState.copy(generalError = error?.message ?: "Неизвестная ошибка")
             }

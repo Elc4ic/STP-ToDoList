@@ -14,7 +14,7 @@ fun Task.toDbModel() =
 fun Task.toDto() =
     TaskDto(
         id.toString(),
-        userId.toString(),
+        userId?.toString(),
         title,
         content,
         isPinned,

@@ -25,10 +25,10 @@ class UserServiceImpl(
     override suspend fun authenticate(request: AuthRequest): Either<AppError, AuthResponse> =
         either {
             val user = userRepository.findByLogin(request.login)
-            ensureNotNull(user) { AppError.Auth.Server.InvalidCredentials() }
+            ensureNotNull(user) { AppError.Server.Auth.InvalidCredentials() }
 
             ensure(PasswordHasher.eqHash(request.password, user.passwordHash)) {
-                AppError.Auth.Server.InvalidCredentials()
+                AppError.Server.Auth.InvalidCredentials()
             }
 
             val accessToken = tokenManager.generateAccessToken(user.id.toString(), user.login)
@@ -39,7 +39,7 @@ class UserServiceImpl(
 
     override suspend fun register(request: AuthRequest): Either<AppError, AuthResponse> = either {
         val existingUser = userRepository.findByLogin(request.login)
-        ensureNotNull(existingUser) { AppError.Auth.Server.UserAlreadyExists(request.login) }
+        ensureNotNull(existingUser) { AppError.Server.Auth.UserAlreadyExists(request.login) }
         val user = userRepository.createUser(request)
         val accessToken = tokenManager.generateAccessToken(user.id, user.login)
         val refreshToken = tokenManager.generateRefreshToken(user.id)
@@ -48,10 +48,10 @@ class UserServiceImpl(
 
     override suspend fun refresh(refreshToken: String): Either<AppError, AuthResponse> = either {
         val userId = tokenManager.verifyRefreshToken(refreshToken)
-        ensureNotNull(userId) { AppError.Auth.Server.InvalidToken() }
+        ensureNotNull(userId) { AppError.Server.Auth.InvalidToken() }
 
         val user = userRepository.findById(userId)
-        ensureNotNull(user) { AppError.Auth.Server.InvalidToken() }
+        ensureNotNull(user) { AppError.Server.Auth.InvalidToken() }
 
         val newAccess = tokenManager.generateAccessToken(user.id.toString(), user.login)
         val newRefresh = tokenManager.generateRefreshToken(user.id.toString())

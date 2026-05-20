@@ -2,7 +2,6 @@ package dev.stp.app
 
 import android.app.Application
 import dev.stp.app.di.dataModule
-import dev.stp.app.di.domainModule
 import dev.stp.app.di.networkModule
 import dev.stp.app.di.viewModelModule
 import dev.stp.app.di.workerModule
@@ -22,7 +21,6 @@ class TaskApp : Application() {
             modules(
                 networkModule,
                 dataModule,
-                domainModule,
                 workerModule,
                 viewModelModule
             )

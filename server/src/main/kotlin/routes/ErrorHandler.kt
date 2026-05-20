@@ -13,27 +13,27 @@ suspend inline fun <reified T : Any> ApplicationCall.respondEither(
     result.fold(
         ifLeft = { e ->
             when (e) {
-                is AppError.Auth.Server.InvalidCredentials -> respond(
+                is AppError.Server.Auth.InvalidCredentials -> respond(
                     HttpStatusCode.Unauthorized,
-                    "Неверный логин или пароль"
+                    e.message
                 )
 
-                is AppError.Auth.Server.UserAlreadyExists -> respond(
+                is AppError.Server.Auth.UserAlreadyExists -> respond(
                     HttpStatusCode.Conflict,
-                    "Логин занят"
+                    e.message
                 )
 
-                is AppError.Auth.Server.InvalidToken -> respond(
+                is AppError.Server.Auth.InvalidToken -> respond(
                     HttpStatusCode.Unauthorized,
-                    "Неверный логин или пароль"
+                    e.message
                 )
 
-                is AppError.Task.Server.DatabaseError -> respond(
+                is AppError.Server.DB.CannotSave -> respond(
                     HttpStatusCode.InternalServerError,
-                    "Ошибка базы данных"
+                    e.message
                 )
 
-                else -> respond(HttpStatusCode.InternalServerError, message = e.message ?: "ХЗ")
+                else -> respond(HttpStatusCode.InternalServerError, message = e.message)
             }
         },
         ifRight = { data ->

@@ -4,9 +4,10 @@ import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDataBase
 import androidx.room.Room
 import apiRoutes.Api
+import dev.stp.app.data.datasource.DataStoreTokenStore
 import dev.stp.app.data.datasource.DeadlineNotificationWorker
 import dev.stp.app.data.datasource.SyncWorker
-import dev.stp.app.data.datasource.TokenManager
+import dev.stp.app.data.datasource.TokenStore
 import dev.stp.app.data.repository.AuthRepositoryImpl
 import dev.stp.app.data.repository.NotificationRepositoryImpl
 import dev.stp.app.data.repository.SyncRepositoryImpl
@@ -15,15 +16,6 @@ import dev.stp.app.domain.repository.AuthRepository
 import dev.stp.app.domain.repository.NotificationRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
-import dev.stp.app.domain.usecases.AddTaskUseCase
-import dev.stp.app.domain.usecases.DeleteTaskUseCase
-import dev.stp.app.domain.usecases.EditTaskUseCase
-import dev.stp.app.domain.usecases.GetAllTaskUseCase
-import dev.stp.app.domain.usecases.GetTaskUseCase
-import dev.stp.app.domain.usecases.LogInUseCase
-import dev.stp.app.domain.usecases.RegistrationUseCase
-import dev.stp.app.domain.usecases.SearchTaskUseCase
-import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.RegistrationScreen.RegistrationViewModel
@@ -42,12 +34,10 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.Serializable
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.androidx.workmanager.dsl.worker
@@ -75,7 +65,7 @@ val dataModule = module {
             context = androidContext(),
             taskDao = get(),
             client = get(),
-            tokenManager = get()
+            tokenStore = get()
         )
     }
 
@@ -86,66 +76,13 @@ val dataModule = module {
             taskDao = get(),
             syncRepository = get(),
             notificationRepository = get(),
-            tokenManager = get()
+            tokenStore = get()
         )
     }
 
     single<AuthRepository> {
         AuthRepositoryImpl(
             get(), get(), get()
-        )
-    }
-}
-val domainModule = module {
-
-    factory {
-        LogInUseCase(
-            repository = get()
-        )
-    }
-
-    factory {
-        AddTaskUseCase(
-            repository = get()
-        )
-    }
-    factory {
-        GetAllTaskUseCase(
-            repository = get()
-        )
-    }
-
-    factory {
-        SearchTaskUseCase(
-            repository = get()
-        )
-    }
-
-    factory {
-        SwitchPinnedUseCase(
-            repository = get()
-        )
-    }
-    factory {
-        DeleteTaskUseCase(
-            repository = get()
-        )
-    }
-
-    factory {
-        EditTaskUseCase(
-            repository = get()
-        )
-    }
-
-    factory {
-        GetTaskUseCase(
-            repository = get()
-        )
-    }
-    factory {
-        RegistrationUseCase(
-            repository = get()
         )
     }
 }
@@ -157,44 +94,38 @@ val workerModule = module {
 val viewModelModule = module {
     viewModel {
         TaskViewModel(
-            getAllTaskUseCase = get(),
-            switchPinnedUseCase = get(),
-            searchTaskUseCase = get()
+            taskRepository = get(),
         )
     }
 
     viewModel {
         AddTaskViewModel(
-            addTaskUseCase = get()
+            taskRepository = get()
         )
     }
 
     viewModel { parameters ->
         EditTaskViewModel(
             taskId = parameters.get(),
-            editTaskUseCase = get(),
-            deleteTaskUseCase = get(),
-            getTaskUseCase = get()
+            taskRepository = get()
         )
     }
 
     viewModel {
         LogInViewModel(
-            logInUseCase = get(),
             authRepository = get(),
             syncRepository = get()
         )
     }
     viewModel {
         RegistrationViewModel(
-            regUseCase = get()
-
+            authRepository = get(),
         )
     }
 }
 
 val networkModule = module {
-    single { TokenManager(androidContext()) }
+    single<TokenStore> { DataStoreTokenStore(androidContext()) }
 
     single {
         HttpClient(Android) {
@@ -211,15 +142,15 @@ val networkModule = module {
             install(Auth) {
                 bearer {
                     loadTokens {
-                        val token = get<TokenManager>().accessToken.first()
-                        val refresh = get<TokenManager>().refreshToken.first()
+                        val token = get<TokenStore>().accessToken.first().getOrNull()
+                        val refresh = get<TokenStore>().refreshToken.first().getOrNull()
                         if (token != null && refresh != null) {
                             BearerTokens(token, refresh)
                         } else null
                     }
 
                     refreshTokens {
-                        val refreshToken = get<TokenManager>().refreshToken.first()
+                        val refreshToken = get<TokenStore>().refreshToken.first().getOrNull()
                             ?: return@refreshTokens null
 
                         try {
@@ -227,7 +158,7 @@ val networkModule = module {
                                 setBody(refreshToken)
                                 markAsRefreshTokenRequest()
                             }.body<AuthResponse>()
-                            get<TokenManager>().saveTokens(
+                            get<TokenStore>().saveTokens(
                                 response.user,
                                 response.accessToken,
                                 response.refreshToken
@@ -237,7 +168,7 @@ val networkModule = module {
                                 response.refreshToken
                             )
                         } catch (e: Exception) {
-                            get<TokenManager>().clear()
+                            get<TokenStore>().clear()
                             null
                         }
                     }
@@ -249,7 +180,7 @@ val networkModule = module {
     single<AuthRepository> {
         AuthRepositoryImpl(
             client = get(),
-            tokenManager = get(),
+            tokenStore = get(),
             taskDao = get()
         )
     }

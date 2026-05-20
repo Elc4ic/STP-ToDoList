@@ -1,6 +1,8 @@
 package dev.stp.app.data.repository
 
-import dev.stp.app.data.datasource.TokenManager
+import arrow.core.Either
+import arrow.core.raise.either
+import dev.stp.app.data.datasource.TokenStore
 import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.data.mapper.toDbModel
@@ -10,15 +12,17 @@ import dev.stp.app.domain.repository.NotificationRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import enums.SyncStatus
+import errors.AppError
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
 
 class TaskRepositoryImpl(
     private val taskDao: TaskDao,
-    private val tokenManager: TokenManager,
+    private val tokenStore: TokenStore,
     private val syncRepository: SyncRepository,
     private val notificationRepository: NotificationRepository,
 ) : TaskRepository {
@@ -29,42 +33,55 @@ class TaskRepositoryImpl(
         isPinned: Boolean,
         createdAt: Long,
         deadline: Long,
-    ) {
+    ): Either<AppError, Unit> = either {
+        val userIdOption = tokenStore.userId.first()
+        val userId = userIdOption.getOrNull()
+
         val uuid = UUID.randomUUID()
-        val userId = tokenManager.userId.firstOrNull()
-        taskDao.addTask(
-            TaskDbModel(
-                id = uuid,
-                userId = userId,
-                title = title,
-                content = content,
-                isPinned = isPinned,
-                createdAt = createdAt,
-                updatedAt = System.currentTimeMillis(),
-                deadline = deadline
+        Either.catch {
+            taskDao.addTask(
+                TaskDbModel(
+                    id = uuid,
+                    userId = userId,
+                    title = title,
+                    content = content,
+                    isPinned = isPinned,
+                    createdAt = createdAt,
+                    updatedAt = System.currentTimeMillis(),
+                    deadline = deadline
+                )
             )
-        )
-        userId?.let { syncRepository.trySync() }
-        notificationRepository
-            .scheduleDeadlineNotification(uuid, title, deadline)
+        }.mapLeft { AppError.Client.DB.CannotSave() }.bind()
+        userId?.let {
+            syncRepository.trySync()
+        }
+
+        notificationRepository.scheduleDeadlineNotification(uuid, title, deadline)
     }
 
-    override suspend fun deleteTask(taskId: UUID) {
-        val task = taskDao.getTask(taskId)
-        taskDao.addTask(
-            task.copy(
-                syncStatus = SyncStatus.PENDING_DELETE
+    override suspend fun deleteTask(taskId: UUID): Either<AppError, Unit> = either {
+        val task = Either.catch { taskDao.getTask(taskId) }
+            .mapLeft { AppError.Client.DB.NotFound() }
+            .bind()
+
+        Either.catch {
+            taskDao.addTask(
+                task.copy(
+                    syncStatus = SyncStatus.PENDING_DELETE
+                )
             )
-        )
+        }.mapLeft { AppError.Client.DB.CannotSave() }.bind()
         notificationRepository.cancelDeadlineNotification(taskId)
     }
 
-    override suspend fun editTask(task: Task) {
+    override suspend fun editTask(task: Task): Either<AppError, Unit> = either {
         val editTask = task.toDbModel().copy(
             updatedAt = System.currentTimeMillis(),
             syncStatus = SyncStatus.PENDING_UPDATE
         )
-        taskDao.addTask(editTask)
+
+        Either.catch { taskDao.addTask(editTask) }
+            .mapLeft { AppError.Client.DB.WriteError(it) }.bind()
         notificationRepository.scheduleDeadlineNotification(
             task.id,
             task.title,
@@ -72,37 +89,48 @@ class TaskRepositoryImpl(
         )
     }
 
-    override fun getAllTasks(): Flow<List<Task>> {
-        return taskDao.getAllTask().map {
-            it.toEntity()
-        }
+    override fun getAllTasks(): Either<AppError, Flow<List<Task>>> = either {
+        Either.catch {
+            taskDao.getAllTask().map { it.toEntity() }
+        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
 
-    override suspend fun getAllNotSyncTasks(): List<Task> {
-        return taskDao.getAllNotSyncTask().map {
-            it.toEntity()
-        }
+    override suspend fun getAllNotSyncTasks(): Either<AppError, List<Task>> = either {
+        Either.catch {
+            taskDao.getAllNotSyncTask().map { it.toEntity() }
+        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
 
-    override suspend fun getTask(taskId: UUID): Task {
-        return taskDao.getTask(taskId).toEntity()
+    override suspend fun getTask(taskId: UUID): Either<AppError, Task> = either {
+        Either.catch {
+            taskDao.getTask(taskId).toEntity()
+        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
 
-    override fun searchTask(query: String): Flow<List<Task>> {
-        return taskDao.searchTask(query).map {
-            it.toEntity()
-        }
+    override fun searchTask(query: String): Flow<Either<AppError, List<Task>>> {
+        return taskDao.searchTask(query)
+            .map { dbModels ->
+                val entities = dbModels.toEntity()
+                Either.Right(entities) as Either<AppError, List<Task>>
+            }
+            .catch { throwable ->
+                emit(Either.Left(AppError.Client.DB.WriteError(throwable)))
+            }
     }
 
-    override suspend fun switchPinned(taskId: UUID) {
-        val task = taskDao.getTask(taskId)
-        taskDao.addTask(
-            task.copy(
-                isPinned = !task.isPinned,
-                updatedAt = System.currentTimeMillis(),
-                syncStatus = SyncStatus.PENDING_UPDATE
+    override suspend fun switchPinned(taskId: UUID): Either<AppError, Unit> = either {
+        val task = Either.catch { taskDao.getTask(taskId) }
+            .mapLeft { AppError.Client.DB.NotFound() }
+            .bind()
+
+        Either.catch {
+            taskDao.addTask(
+                task.copy(
+                    isPinned = !task.isPinned,
+                    updatedAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.PENDING_UPDATE
+                )
             )
-        )
-        taskDao.switchPinned(taskId)
+        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
 }

@@ -41,6 +41,7 @@ android {
         jvmToolchain(21)
         compilerOptions {
             freeCompilerArgs.add("-Xannotation-default-target=param-property")
+            freeCompilerArgs.add("-XXLanguage:+ContextParameters")
             jvmTarget.set(JvmTarget.JVM_21)
         }
     }
@@ -106,6 +107,9 @@ dependencies {
 
     // workManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    //arrowkt
+    implementation(libs.arrow.core)
 
     // test
     testImplementation(libs.junit)

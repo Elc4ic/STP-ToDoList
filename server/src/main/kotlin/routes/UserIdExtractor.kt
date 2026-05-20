@@ -11,9 +11,9 @@ import java.util.UUID
 
 fun RoutingContext.getUserUuid(): Either<AppError, UUID> = either {
     val userIdStr = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
-    ensureNotNull(userIdStr) { AppError.Auth.Server.InvalidToken() }
+    ensureNotNull(userIdStr) { AppError.Server.Auth.InvalidToken() }
 
     Either.catch { UUID.fromString(userIdStr) }
-        .mapLeft { AppError.Auth.Server.InvalidToken() }
+        .mapLeft { AppError.Server.Auth.InvalidToken() }
         .bind()
 }

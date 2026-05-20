@@ -2,9 +2,10 @@ package dev.stp.app.presentation.LogInScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import arrow.core.getOrElse
 import dev.stp.app.domain.repository.AuthRepository
 import dev.stp.app.domain.repository.SyncRepository
-import dev.stp.app.domain.usecases.LogInUseCase
+import dev.stp.app.domain.actions.logIn
 import errors.AppError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +50,6 @@ sealed interface LogInEvent {
 }
 
 class LogInViewModel(
-    private val logInUseCase: LogInUseCase,
     private val authRepository: AuthRepository,
     private val syncRepository: SyncRepository,
 ) : ViewModel() {
@@ -65,7 +65,7 @@ class LogInViewModel(
             authRepository.isAuthorized().collect { isAuthed ->
                 if (isAuthed) {
                     authRepository.loginName().collect {
-                        _state.value = LogInState.Authorized(userName = it ?: "User")
+                        _state.value = LogInState.Authorized(userName = it.getOrElse { "User" })
                     }
 
                 } else {
@@ -109,18 +109,17 @@ class LogInViewModel(
         if (!currentState.isSubmitEnabled) return
 
         viewModelScope.launch {
-            updateContent { it.copy(isSubmitting = true, generalError = null) }
+            with(authRepository) {
+                updateContent { it.copy(isSubmitting = true, generalError = null) }
 
-            val result = logInUseCase(currentState.login, currentState.password)
+                val result = logIn(currentState.login, currentState.password)
 
-            result.onSuccess {
-                _event.emit(LogInEvent.NavigateToHome)
-            }.onFailure { throwable ->
-                val error = throwable as? AppError
-                handleError(error)
+                result.fold(
+                    ifLeft = { error -> handleError(error) },
+                    ifRight = { _event.emit(LogInEvent.NavigateToHome) }
+                )
+                updateContent { it.copy(isSubmitting = false) }
             }
-
-            updateContent { it.copy(isSubmitting = false) }
         }
     }
 
@@ -137,10 +136,10 @@ class LogInViewModel(
         val current = _state.value as? LogInState.Authorized ?: return
         viewModelScope.launch {
             _state.value = current.copy(isSyncing = true)
-            syncRepository.getFromServer().onFailure { throwable ->
-                val error = throwable as? AppError
-                handleError(error)
-            }
+            syncRepository.getFromServer().fold(
+                ifLeft = { error -> handleError(error) },
+                ifRight = {}
+            )
             _state.value = current.copy(isSyncing = false)
         }
     }
@@ -148,11 +147,11 @@ class LogInViewModel(
     private fun handleError(error: AppError?) {
         updateContent { prevState ->
             when (error) {
-                is AppError.Auth.Client.LoginFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.Client.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Auth.Client.PasswordTooShort -> prevState.copy(passwordError = error.message)
-                is AppError.Auth.Server.InvalidCredentials -> prevState.copy(generalError = error.message)
-                is AppError.Auth.Server.UserNotFound -> prevState.copy(generalError = error.message)
+                is AppError.Client.Auth.LoginFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Client.Auth.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
+                is AppError.Client.Auth.PasswordTooShort -> prevState.copy(passwordError = error.message)
+                is AppError.Server.Auth.InvalidCredentials -> prevState.copy(generalError = error.message)
+                is AppError.Server.Auth.UserNotFound -> prevState.copy(generalError = error.message)
                 is AppError.NetworkError -> prevState.copy(generalError = error.message)
                 else -> prevState.copy(generalError = error?.message ?: "Неизвестная ошибка")
             }
