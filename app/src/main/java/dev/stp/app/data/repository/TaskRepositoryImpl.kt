@@ -1,5 +1,6 @@
 package dev.stp.app.data.repository
 
+import dev.stp.app.data.datasource.TokenManager
 import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.data.mapper.toDbModel
@@ -10,12 +11,14 @@ import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import enums.SyncStatus
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
 
 class TaskRepositoryImpl(
     private val taskDao: TaskDao,
+    private val tokenManager: TokenManager,
     private val syncRepository: SyncRepository,
     private val notificationRepository: NotificationRepository,
 ) : TaskRepository {
@@ -28,9 +31,11 @@ class TaskRepositoryImpl(
         deadline: Long,
     ) {
         val uuid = UUID.randomUUID()
+        val userId = tokenManager.userId.firstOrNull()
         taskDao.addTask(
             TaskDbModel(
                 id = uuid,
+                userId = userId,
                 title = title,
                 content = content,
                 isPinned = isPinned,
@@ -39,7 +44,7 @@ class TaskRepositoryImpl(
                 deadline = deadline
             )
         )
-        syncRepository.trySync()
+        userId?.let { syncRepository.trySync() }
         notificationRepository
             .scheduleDeadlineNotification(uuid, title, deadline)
     }

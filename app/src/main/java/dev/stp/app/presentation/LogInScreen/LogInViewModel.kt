@@ -133,11 +133,14 @@ class LogInViewModel(
         }
     }
 
-    private fun pullUp(){
+    private fun pullUp() {
         val current = _state.value as? LogInState.Authorized ?: return
         viewModelScope.launch {
             _state.value = current.copy(isSyncing = true)
-            syncRepository.getFromServer()
+            syncRepository.getFromServer().onFailure { throwable ->
+                val error = throwable as? AppError
+                handleError(error)
+            }
             _state.value = current.copy(isSyncing = false)
         }
     }
