@@ -49,6 +49,7 @@ fun TasksScreen(
     addTaskClick: () -> Unit,
     notifyClick: () -> Unit,
     settingsClick: () -> Unit,
+    onSchedule: ()->Unit
 ) {
     val state by viewModel.state.collectAsState()
     var showAuthSheet by remember { mutableStateOf(false) }
@@ -116,7 +117,7 @@ fun TasksScreen(
             }
 
             item {
-                SwitchScreen()
+                SwitchScreen(onSchedule = onSchedule)
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))

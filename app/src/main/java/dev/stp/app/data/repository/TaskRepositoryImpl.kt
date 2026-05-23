@@ -133,4 +133,14 @@ class TaskRepositoryImpl(
             )
         }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
+
+    override fun getTasksForPeriod(
+        startDay: Long,
+        endDay: Long
+    ): Flow<List<Task>> {
+        return taskDao.getTasksForPeriod(startDay, endDay)
+            .map { it.toEntity() }
+    }
+
+
 }

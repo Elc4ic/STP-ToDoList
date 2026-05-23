@@ -19,6 +19,7 @@ import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.RegistrationScreen.RegistrationViewModel
+import dev.stp.app.presentation.ScheduleScreen.ScheduleViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
 import io.ktor.client.HttpClient
@@ -108,6 +109,12 @@ val viewModelModule = module {
         EditTaskViewModel(
             taskId = parameters.get(),
             taskRepository = get()
+        )
+    }
+
+    viewModel {
+        ScheduleViewModel(
+            getPeriodTasks = get()
         )
     }
 

@@ -30,7 +30,6 @@ fun AccountBottomSheet(
                     toRegistration = { mode = AuthMode.REGISTER }
                 )
             }
-
             AuthMode.REGISTER -> {
                 RegistrationSheetContent(
                     onBack = { mode = AuthMode.LOGIN },

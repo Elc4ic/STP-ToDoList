@@ -68,6 +68,8 @@ fun EditScreen(
     onFinish: () -> Unit
 ) {
 
+    var enabled by remember{mutableStateOf(true)}
+
     val state by viewModel.state.collectAsState()
 
     var showDatePicker by remember {
@@ -81,6 +83,7 @@ fun EditScreen(
     LaunchedEffect(Unit) {
         viewModel.event.collect { event ->
             when (event) {
+
                 EditScreenEvent.Finish -> onFinish()
             }
         }
@@ -214,7 +217,8 @@ fun EditScreen(
                             Icon(
                                 modifier = Modifier
                                     .padding(start = 16.dp, end = 8.dp)
-                                    .clickable {
+                                    .clickable (enabled = enabled){
+                                        enabled = false
                                         onFinish()
                                     },
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
