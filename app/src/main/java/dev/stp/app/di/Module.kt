@@ -19,6 +19,7 @@ import dev.stp.app.domain.usecases.AddTaskUseCase
 import dev.stp.app.domain.usecases.DeleteTaskUseCase
 import dev.stp.app.domain.usecases.EditTaskUseCase
 import dev.stp.app.domain.usecases.GetAllTaskUseCase
+import dev.stp.app.domain.usecases.GetDayTasks
 import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.LogInUseCase
 import dev.stp.app.domain.usecases.RegistrationUseCase
@@ -27,6 +28,7 @@ import dev.stp.app.domain.usecases.SwitchPinnedUseCase
 import dev.stp.app.presentation.LogInScreen.LogInViewModel
 import dev.stp.app.presentation.EditTaskScreen.EditTaskViewModel
 import dev.stp.app.presentation.RegistrationScreen.RegistrationViewModel
+import dev.stp.app.presentation.ScheduleScreen.ScheduleViewModel
 import dev.stp.app.presentation.TasksScreen.TaskViewModel
 import dto.AuthResponse
 import io.ktor.client.HttpClient
@@ -73,7 +75,8 @@ val dataModule = module {
     single<SyncRepository> {
         SyncRepositoryImpl(
             context = androidContext(),
-            taskDao = get()
+            taskDao = get(),
+            client = get(),
         )
     }
 
@@ -93,6 +96,12 @@ val domainModule = module {
 
     factory {
         LogInUseCase(
+            repository = get()
+        )
+    }
+
+    factory {
+        GetDayTasks(
             repository = get()
         )
     }
@@ -169,6 +178,12 @@ val viewModelModule = module {
             editTaskUseCase = get(),
             deleteTaskUseCase = get(),
             getTaskUseCase = get()
+        )
+    }
+
+    viewModel{
+        ScheduleViewModel(
+            getDayTasks = get()
         )
     }
 

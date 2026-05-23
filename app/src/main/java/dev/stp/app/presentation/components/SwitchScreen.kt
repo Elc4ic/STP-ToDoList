@@ -1,6 +1,7 @@
 package dev.stp.app.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,8 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SwitchScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSchedule: ()->Unit
 
 ) {
     Row(
@@ -34,6 +36,9 @@ fun SwitchScreen(
 
         ) {
             Text(
+                modifier = Modifier.clickable{
+                    onSchedule()
+                },
                 text = "Schedule",
                 fontWeight = FontWeight.W600,
                 fontSize = 16.sp,
@@ -52,7 +57,7 @@ fun SwitchScreen(
 
         ) {
             Text(
-                text = "Note",
+                text = "Tasks",
                 color = MaterialTheme.colorScheme.onPrimary
 
             )

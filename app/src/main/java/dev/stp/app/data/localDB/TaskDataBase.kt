@@ -7,7 +7,7 @@ import dev.stp.app.data.mapper.SyncStatusConverter
 import dev.stp.app.data.mapper.UuidConverter
 
 
-@Database(entities = [TaskDbModel::class], version = 1, exportSchema = false)
+@Database(entities = [TaskDbModel::class], version = 2, exportSchema = false)
 @TypeConverters(SyncStatusConverter::class, UuidConverter::class)
 abstract class TaskDataBase : RoomDatabase() {
     abstract fun taskDao(): TaskDao

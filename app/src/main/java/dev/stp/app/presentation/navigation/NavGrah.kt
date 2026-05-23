@@ -9,11 +9,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.stp.app.presentation.AddTaskScreen.AddTaskScreen
 import dev.stp.app.presentation.EditTaskScreen.EditScreen
+import dev.stp.app.presentation.ScheduleScreen.ScheduleScreen
 import dev.stp.app.presentation.TasksScreen.TasksScreen
 import java.util.UUID
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
@@ -31,24 +31,41 @@ fun NavGraph() {
                 onTaskClick = { task ->
                     navController.navigate(Screen.EditScreen.createRoute(task.id))
                 },
+                onSchedule = {
+                    navController.navigate(Screen.ScheduleScreen.route)
+                }
             )
         }
-        composable(Screen.AddTask.route) {
-            AddTaskScreen(
-                onFinish = {
+        composable(Screen.ScheduleScreen.route) {
+            ScheduleScreen(
+                onTaskScreen = {
                     navController.popBackStack()
                 },
-                onBack = { navController.popBackStack() }
+                notifyClick = {},
+                settingsClick = {}
             )
+        }
+
+        composable(Screen.AddTask.route) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AddTaskScreen(
+                    onFinish = {
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
         composable(Screen.EditScreen.route) {
             val taskId = Screen.EditScreen.getTaskId(it.arguments)
-            EditScreen(
-                taskId = taskId,
-                onFinish = {
-                    navController.popBackStack()
-                }
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                EditScreen(
+                    taskId = taskId,
+                    onFinish = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
     }
 }
@@ -59,6 +76,8 @@ sealed class Screen(val route: String) {
     data object Registration : Screen("registration")
     data object Tasks : Screen("main")
     data object AddTask : Screen("add_task")
+
+    data object ScheduleScreen : Screen("schedule")
 
     data object EditScreen : Screen("edit_task/{task_id}") {
         fun createRoute(taskId: UUID): String {

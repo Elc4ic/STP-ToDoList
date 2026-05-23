@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import dev.stp.app.presentation.ScheduleScreen.ScheduleScreen
 import dev.stp.app.presentation.navigation.NavGraph
 import dev.stp.app.presentation.ui.theme.AppTheme
 
@@ -16,6 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
+
                 NavGraph()
             }
         }
