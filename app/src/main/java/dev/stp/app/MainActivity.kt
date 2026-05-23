@@ -11,13 +11,11 @@ import dev.stp.app.presentation.navigation.NavGraph
 import dev.stp.app.presentation.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AppTheme {
-
                 NavGraph()
             }
         }

@@ -28,5 +28,5 @@ interface TaskRepository {
 
     suspend fun switchPinned(taskId: UUID)
 
-   fun getDayTasks(startDay: Long,endDay: Long): Flow<List<Task>>
+   fun getTasksForPeriod(startDay: Long, endDay: Long): Flow<List<Task>>
 }

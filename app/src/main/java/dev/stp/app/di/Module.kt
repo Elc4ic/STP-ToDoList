@@ -19,7 +19,7 @@ import dev.stp.app.domain.usecases.AddTaskUseCase
 import dev.stp.app.domain.usecases.DeleteTaskUseCase
 import dev.stp.app.domain.usecases.EditTaskUseCase
 import dev.stp.app.domain.usecases.GetAllTaskUseCase
-import dev.stp.app.domain.usecases.GetDayTasks
+import dev.stp.app.domain.usecases.GetPeriodTasks
 import dev.stp.app.domain.usecases.GetTaskUseCase
 import dev.stp.app.domain.usecases.LogInUseCase
 import dev.stp.app.domain.usecases.RegistrationUseCase
@@ -44,12 +44,10 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.Serializable
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.androidx.workmanager.dsl.worker
@@ -101,7 +99,7 @@ val domainModule = module {
     }
 
     factory {
-        GetDayTasks(
+        GetPeriodTasks(
             repository = get()
         )
     }
@@ -181,9 +179,9 @@ val viewModelModule = module {
         )
     }
 
-    viewModel{
+    viewModel {
         ScheduleViewModel(
-            getDayTasks = get()
+            getPeriodTasks = get()
         )
     }
 

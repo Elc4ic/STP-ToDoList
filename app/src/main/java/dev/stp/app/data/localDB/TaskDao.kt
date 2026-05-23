@@ -35,13 +35,14 @@ interface TaskDao {
     suspend fun addTask(task: TaskDbModel)
 
     @Query("""
-        SELECT * FROM tasks
-        WHERE deadline BETWEEN :startDay AND :endDay
-        AND syncStatus != 'PENDING_DELETE'
-        """)
-    fun getDayTask(
-        startDay: Long,
-        endDay: Long
+    SELECT * FROM tasks
+    WHERE deadline BETWEEN :startMillis AND :endMillis
+    AND syncStatus != 'PENDING_DELETE'
+    ORDER BY deadline ASC
+""")
+    fun getTasksForPeriod(
+        startMillis: Long,
+        endMillis: Long
     ): Flow<List<TaskDbModel>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

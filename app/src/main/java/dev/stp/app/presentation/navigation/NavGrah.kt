@@ -1,8 +1,6 @@
 package dev.stp.app.presentation.navigation
 
-import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -45,35 +43,28 @@ fun NavGraph() {
                 settingsClick = {}
             )
         }
-
         composable(Screen.AddTask.route) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                AddTaskScreen(
-                    onFinish = {
-                        navController.popBackStack()
-                    },
-                    onBack = { navController.popBackStack() }
-                )
-            }
+            AddTaskScreen(
+                onFinish = {
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Screen.EditScreen.route) {
             val taskId = Screen.EditScreen.getTaskId(it.arguments)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                EditScreen(
-                    taskId = taskId,
-                    onFinish = {
-                        navController.popBackStack()
-                    }
-                )
-            }
+            EditScreen(
+                taskId = taskId,
+                onFinish = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
 
 
 sealed class Screen(val route: String) {
-    data object LogIn : Screen("login")
-    data object Registration : Screen("registration")
     data object Tasks : Screen("main")
     data object AddTask : Screen("add_task")
 
