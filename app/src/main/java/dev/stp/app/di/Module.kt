@@ -114,7 +114,7 @@ val viewModelModule = module {
 
     viewModel {
         ScheduleViewModel(
-            getPeriodTasks = get()
+            taskRepository = get()
         )
     }
 

@@ -195,29 +195,51 @@ fun ScheduleScreen(
 
                 Spacer(modifier = Modifier.heightIn(12.dp))
 
-                if (daysTask.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(color = MaterialTheme.colorScheme.onSecondary)
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "You Didn’t Have Any tasks.",
-                            fontWeight = FontWeight.W600,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                when {
+                    state.generalError != null -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(color = MaterialTheme.colorScheme.errorContainer)
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = state.generalError ?: "Произошла неизвестная ошибка",
+                                fontWeight = FontWeight.W600,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                     }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(daysTask) { task ->
-                            ScheduleTaskCard(task = task)
+
+                    daysTask.isEmpty() -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(color = MaterialTheme.colorScheme.onSecondary)
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "You Didn’t Have Any tasks.",
+                                fontWeight = FontWeight.W600,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(daysTask) { task ->
+                                ScheduleTaskCard(task = task)
+                            }
                         }
                     }
                 }

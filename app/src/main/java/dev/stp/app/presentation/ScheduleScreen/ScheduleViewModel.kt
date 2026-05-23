@@ -3,7 +3,7 @@ package dev.stp.app.presentation.ScheduleScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
-import dev.stp.app.domain.usecases.GetPeriodTasks
+import dev.stp.app.domain.repository.TaskRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +19,8 @@ data class ScheduleState(
     val displayedMonth: YearMonth = YearMonth.now(),
     val selectedStartDate: Long? = null,
     val selectedEndDate: Long? = null,
-    val tasksDay: List<Task> = emptyList()
+    val tasksDay: List<Task> = emptyList(),
+    val generalError: String? = null
 )
 
 sealed interface ScheduleCommand {
@@ -28,7 +29,7 @@ sealed interface ScheduleCommand {
 }
 
 class ScheduleViewModel(
-    private val getPeriodTasks: GetPeriodTasks
+    private val taskRepository: TaskRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(ScheduleState())
     val state = _state.asStateFlow()
@@ -75,6 +76,7 @@ class ScheduleViewModel(
     }
 
     private fun loadTasksForRange(startMilli: Long, endMilli: Long) {
+
         val startOfDay = Instant.ofEpochMilli(startMilli)
             .atZone(zoneId)
             .toLocalDate()
@@ -92,9 +94,26 @@ class ScheduleViewModel(
 
         tasksJob?.cancel()
         tasksJob = viewModelScope.launch {
-            getPeriodTasks(startOfDay, endOfDay).collect { tasks ->
-                _state.update { it.copy(tasksDay = tasks) }
-            }
+            taskRepository.getTasksForPeriod(startOfDay, endOfDay).fold(
+                ifLeft = { error ->
+                    _state.update { prevState ->
+                        prevState.copy(
+                            tasksDay = emptyList(),
+                            generalError = error.message
+                        )
+                    }
+                },
+                ifRight = { flow ->
+                    flow.collect { tasks ->
+                        _state.update { prevState ->
+                            prevState.copy(
+                                tasksDay = tasks,
+                                generalError = null
+                            )
+                        }
+                    }
+                }
+            )
         }
     }
 }

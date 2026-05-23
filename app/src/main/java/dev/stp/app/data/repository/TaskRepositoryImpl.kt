@@ -134,13 +134,12 @@ class TaskRepositoryImpl(
         }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
     }
 
-    override fun getTasksForPeriod(
+    override suspend fun getTasksForPeriod(
         startDay: Long,
         endDay: Long
-    ): Flow<List<Task>> {
-        return taskDao.getTasksForPeriod(startDay, endDay)
-            .map { it.toEntity() }
+    ): Either<AppError, Flow<List<Task>>> = either {
+        Either.catch {
+            taskDao.getTasksForPeriod(startDay, endDay).map { it.toEntity() }
+        }.mapLeft { AppError.Client.DB.NotFound() }.bind()
     }
-
-
 }
