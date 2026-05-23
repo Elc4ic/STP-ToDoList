@@ -41,6 +41,7 @@ android {
         jvmToolchain(21)
         compilerOptions {
             freeCompilerArgs.add("-Xannotation-default-target=param-property")
+            freeCompilerArgs.add("-XXLanguage:+ContextParameters")
             jvmTarget.set(JvmTarget.JVM_21)
         }
     }
@@ -92,7 +93,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-    annotationProcessor(libs.androidx.room.room.compiler)
+    annotationProcessor(libs.androidx.room.compiler)
 
     // ktor
     implementation(libs.ktor.client.android)
@@ -107,6 +108,9 @@ dependencies {
 
     // workManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    //arrowkt
+    implementation(libs.arrow.core)
 
     // test
     testImplementation(libs.junit)

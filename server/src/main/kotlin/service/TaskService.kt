@@ -1,6 +1,8 @@
 package dev.stp.service
 
 import apiRoutes.Api
+import arrow.core.Either
+import arrow.core.raise.either
 import dev.stp.domain.repository.TaskRepository
 import dev.stp.domain.repository.UserRepository
 import dev.stp.infrastructure.schema.TasksTable
@@ -10,6 +12,7 @@ import dto.SyncResponse
 import dto.SyncTaskResponse
 import enums.ResultCode
 import enums.SyncStatus
+import errors.AppError
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -19,7 +22,7 @@ import java.util.UUID
 
 interface TaskService {
     suspend fun sync(userId: UUID, request: SyncRequest): SyncResponse
-    suspend fun getAll(userId: UUID): GetTaskResponse
+    suspend fun getAll(userId: UUID): Either<AppError, GetTaskResponse>
 }
 
 class TaskServiceImpl(
@@ -28,7 +31,7 @@ class TaskServiceImpl(
 
     override suspend fun sync(userId: UUID, request: SyncRequest): SyncResponse {
         return SyncResponse(request.unsyncTasks.map { dto ->
-            try {
+            Either.catch {
                 when (SyncStatus.valueOf(dto.syncStatus)) {
                     SyncStatus.PENDING_DELETE -> taskRepository.delete(userId, dto)
                     SyncStatus.PENDING_UPDATE -> taskRepository.update(userId, dto)
@@ -39,17 +42,24 @@ class TaskServiceImpl(
                     id = dto.id,
                     status = ResultCode.SUCCESS.toString()
                 )
-            } catch (e: Exception) {
-                print(e)
-                SyncTaskResponse(dto.id, ResultCode.ERROR.toString())
-            }
+            }.fold(
+                ifLeft = { error ->
+                    println("Ошибка синхронизации: ${error.message}")
+                    SyncTaskResponse(dto.id, ResultCode.ERROR.toString())
+                },
+                ifRight = {
+                    SyncTaskResponse(dto.id, ResultCode.SUCCESS.toString())
+                }
+            )
         })
     }
 
-    override suspend fun getAll(userId: UUID): GetTaskResponse {
-        return GetTaskResponse(
-            taskRepository.getAllByUserId(userId).map { it.toDto() }
-        )
+    override suspend fun getAll(userId: UUID): Either<AppError, GetTaskResponse> = either {
+        val tasks = Either.catch { taskRepository.getAllByUserId(userId) }
+            .mapLeft { AppError.Server.DB.NotFound() }
+            .bind()
+
+        GetTaskResponse(tasks.map { it.toDto() })
     }
 
 }

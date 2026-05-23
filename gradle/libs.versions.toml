@@ -1,8 +1,6 @@
 [versions]
 # Build Tools & Plugins
 agp = "9.1.1"
-dotenvKotlin = "6.4.1"
-koinAndroidxWorkmanager = "3.5.6"
 kotlin = "2.3.20"
 ksp = "2.3.4"
 
@@ -33,6 +31,8 @@ hikaricp = "7.0.2"
 jbcrypt = "0.4"
 postgresql = "42.7.3"
 r2dbc-h2 = "1.0.0.RELEASE"
+arrow = "2.2.2.1"
+dotenvKotlin = "6.4.1"
 
 # Background & Logging
 logback = "1.5.21"
@@ -68,7 +68,6 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 # Room
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
-androidx-room-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 
 # Background & Storage
@@ -104,6 +103,9 @@ server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation"
 server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 server-statusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+
+# Arrow
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 
 # Server Database
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }

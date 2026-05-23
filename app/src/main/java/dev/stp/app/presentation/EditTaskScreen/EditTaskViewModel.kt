@@ -3,9 +3,7 @@ package dev.stp.app.presentation.EditTaskScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
-import dev.stp.app.domain.usecases.DeleteTaskUseCase
-import dev.stp.app.domain.usecases.EditTaskUseCase
-import dev.stp.app.domain.usecases.GetTaskUseCase
+import dev.stp.app.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -23,6 +21,7 @@ sealed interface EditCommands {
     data object DeleteTask : EditCommands
     data object Save : EditCommands
     data object Back : EditCommands
+    data object Retry : EditCommands
 }
 
 sealed interface EditScreenState {
@@ -33,6 +32,8 @@ sealed interface EditScreenState {
                 return (task.title.isNotBlank() && task.createdAt != 0L && task.deadline != 0L && task.deadline > task.createdAt)
             }
     }
+
+    data class Error(val message: String) : EditScreenState
 }
 
 sealed interface EditScreenEvent {
@@ -41,9 +42,7 @@ sealed interface EditScreenEvent {
 
 class EditTaskViewModel(
     private val taskId: UUID,
-    private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val editTaskUseCase: EditTaskUseCase,
-    private val getTaskUseCase: GetTaskUseCase
+    private val taskRepository: TaskRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<EditScreenState>(EditScreenState.Loading)
@@ -54,9 +53,18 @@ class EditTaskViewModel(
     val state = _state.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            val task = getTaskUseCase(taskId)
-            _state.value = EditScreenState.Editing(task)
+        loadTasks()
+    }
+
+    fun loadTasks() {
+        with(taskRepository) {
+            viewModelScope.launch {
+                _state.value = getTask(taskId).fold(
+                    ifLeft = { error -> EditScreenState.Error(error.message) },
+                    ifRight = { task -> EditScreenState.Editing(task) }
+                )
+
+            }
         }
     }
 
@@ -70,6 +78,7 @@ class EditTaskViewModel(
             EditCommands.Back -> viewModelScope.launch { _event.emit(EditScreenEvent.Finish) }
             EditCommands.Save -> saveTask()
             EditCommands.DeleteTask -> deleteTask()
+            EditCommands.Retry -> loadTasks()
         }
     }
 
@@ -82,24 +91,29 @@ class EditTaskViewModel(
     }
 
     private fun saveTask() {
-        val currentState = _state.value
-        if (currentState !is EditScreenState.Editing || !currentState.isSaveEnabled) return
+        with(taskRepository) {
+            val currentState = _state.value
+            if (currentState !is EditScreenState.Editing || !currentState.isSaveEnabled) return
 
-        viewModelScope.launch {
-            _state.value = EditScreenState.Loading
-            editTaskUseCase(currentState.task)
-            _event.emit(EditScreenEvent.Finish)
+            viewModelScope.launch {
+                _state.value = EditScreenState.Loading
+                editTask(currentState.task)
+                _event.emit(EditScreenEvent.Finish)
+            }
         }
+
     }
 
     private fun deleteTask() {
-        val currentState = _state.value
-        if (currentState !is EditScreenState.Editing) return
+        with(taskRepository) {
+            val currentState = _state.value
+            if (currentState !is EditScreenState.Editing) return
 
-        viewModelScope.launch {
-            _state.value = EditScreenState.Loading
-            deleteTaskUseCase(currentState.task.id)
-            _event.emit(EditScreenEvent.Finish)
+            viewModelScope.launch {
+                _state.value = EditScreenState.Loading
+                deleteTask(currentState.task.id)
+                _event.emit(EditScreenEvent.Finish)
+            }
         }
     }
 }

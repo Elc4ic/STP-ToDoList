@@ -1,5 +1,7 @@
 package dev.stp.app.data.mapper
 
+import arrow.core.Either
+import arrow.core.flatMap
 import errors.AppError
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -13,32 +15,33 @@ import java.net.UnknownHostException
 suspend inline fun <reified T> safeApiCall(
     crossinline call: suspend () -> HttpResponse,
     noinline mapError: ((HttpStatusCode) -> AppError?) = { null }
-): Result<T> {
-    return try {
-        val response = call()
+): Either<AppError, T> {
+    val responseResult = Either.catch {
+        call()
+    }.mapLeft { error ->
+        when (error) {
+            is ConnectTimeoutException, is UnknownHostException -> AppError.NetworkError()
+            is SerializationException -> AppError.Unknown("Ошибка парсинга данных")
+            else -> AppError.Unknown(error.message ?: "Неизвестная ошибка")
+        }
+    }
+    return responseResult.flatMap { response ->
         val status = response.status
 
         if (status.isSuccess()) {
-            if (T::class == Unit::class) Result.success(Unit as T)
-            else Result.success(response.body<T>())
+            Either.catch {
+                if (T::class == Unit::class) Unit as T
+                else response.body<T>()
+            }.mapLeft { AppError.Unknown("Ошибка десериализации: ${it.message}") }
         } else {
             val error = mapError(status)
                 ?: when (status) {
-                    HttpStatusCode.Unauthorized -> AppError.Auth.Server.InvalidCredentials()
-                    HttpStatusCode.NotFound -> AppError.Auth.Server.UserNotFound()
+                    HttpStatusCode.Unauthorized -> AppError.Server.Auth.InvalidCredentials()
+                    HttpStatusCode.NotFound -> AppError.Server.Auth.UserNotFound()
                     HttpStatusCode.InternalServerError -> AppError.ServerError()
                     else -> AppError.Unknown("Код ошибки: ${status.value}")
                 }
-            Result.failure(error)
+            Either.Left(error)
         }
-    } catch (e: Exception) {
-        val appError = when (e) {
-            is ConnectTimeoutException, is UnknownHostException -> AppError.NetworkError()
-            is SerializationException -> AppError.Unknown("Ошибка парсинга данных")
-            is AppError -> e
-            else -> AppError.Unknown(e.message ?: "Неизвестная ошибка")
-        }
-        Result.failure(appError)
     }
 }
-

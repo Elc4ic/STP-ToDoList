@@ -17,6 +17,7 @@ data class TaskEntity(
 ) {
     fun toDto(): TaskDto = TaskDto(
         id = this.id.toString(),
+        userId = this.id.toString(),
         title = this.title,
         content = this.content,
         isPinned = this.isPinned,
