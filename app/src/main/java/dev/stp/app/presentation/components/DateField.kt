@@ -24,7 +24,7 @@ fun DateField(
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
             .clickable { onClick() },

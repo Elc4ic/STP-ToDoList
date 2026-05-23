@@ -1,19 +1,17 @@
 package dev.stp.app.presentation.navigation
 
-import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.stp.app.presentation.AddTaskScreen.AddTaskScreen
 import dev.stp.app.presentation.EditTaskScreen.EditScreen
+import dev.stp.app.presentation.ScheduleScreen.ScheduleScreen
 import dev.stp.app.presentation.TasksScreen.TasksScreen
 import java.util.UUID
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
@@ -31,6 +29,18 @@ fun NavGraph() {
                 onTaskClick = { task ->
                     navController.navigate(Screen.EditScreen.createRoute(task.id))
                 },
+                onSchedule = {
+                    navController.navigate(Screen.ScheduleScreen.route)
+                }
+            )
+        }
+        composable(Screen.ScheduleScreen.route) {
+            ScheduleScreen(
+                onTaskScreen = {
+                    navController.popBackStack()
+                },
+                notifyClick = {},
+                settingsClick = {}
             )
         }
         composable(Screen.AddTask.route) {
@@ -55,10 +65,10 @@ fun NavGraph() {
 
 
 sealed class Screen(val route: String) {
-    data object LogIn : Screen("login")
-    data object Registration : Screen("registration")
     data object Tasks : Screen("main")
     data object AddTask : Screen("add_task")
+
+    data object ScheduleScreen : Screen("schedule")
 
     data object EditScreen : Screen("edit_task/{task_id}") {
         fun createRoute(taskId: UUID): String {

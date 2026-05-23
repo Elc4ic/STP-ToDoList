@@ -1,10 +1,12 @@
 package dev.stp.app.data.localDB
 
+import androidx.datastore.preferences.protobuf.Timestamp
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import dev.stp.app.domain.entity.Task
 import enums.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -28,6 +30,20 @@ interface TaskDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: TaskDbModel)
+
+    @Query("""
+    SELECT * FROM tasks
+    WHERE deadline BETWEEN :startMillis AND :endMillis
+    AND syncStatus != 'PENDING_DELETE'
+    ORDER BY deadline ASC
+""")
+    fun getTasksForPeriod(
+        startMillis: Long,
+        endMillis: Long
+    ): Flow<List<TaskDbModel>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTasks(tasks: List<TaskDbModel>)
 
     @Query("DELETE FROM tasks WHERE id == :taskId")
     suspend fun deleteTask(taskId: UUID)

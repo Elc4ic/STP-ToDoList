@@ -19,6 +19,7 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = Purple100,
     secondary = Purple200,
+    tertiary = Purple400,
     onPrimary = White,
     surface = Grey200,
     onSecondary = Purple300,

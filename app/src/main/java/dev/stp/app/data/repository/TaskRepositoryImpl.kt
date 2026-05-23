@@ -105,4 +105,14 @@ class TaskRepositoryImpl(
         )
         taskDao.switchPinned(taskId)
     }
+
+    override fun getTasksForPeriod(
+        startDay: Long,
+        endDay: Long
+    ): Flow<List<Task>> {
+        return taskDao.getTasksForPeriod(startDay, endDay)
+            .map { it.toEntity() }
+    }
+
+
 }
