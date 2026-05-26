@@ -11,6 +11,7 @@ import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.NotificationRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
+import enums.ProgressStatus
 import enums.SyncStatus
 import errors.AppError
 import kotlinx.coroutines.flow.Flow
@@ -127,6 +128,25 @@ class TaskRepositoryImpl(
             taskDao.addTask(
                 task.copy(
                     isPinned = !task.isPinned,
+                    updatedAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.PENDING_UPDATE
+                )
+            )
+        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+    }
+
+    override suspend fun changeProgress(
+        taskId: UUID,
+        status: ProgressStatus
+    ): Either<AppError, Unit> = either {
+        val task = Either.catch { taskDao.getTask(taskId) }
+            .mapLeft { AppError.Client.DB.NotFound() }
+            .bind()
+
+        Either.catch {
+            taskDao.addTask(
+                task.copy(
+                    processStatus = status,
                     updatedAt = System.currentTimeMillis(),
                     syncStatus = SyncStatus.PENDING_UPDATE
                 )

@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.actions.getVisibleTask
-import errors.AppError
+import enums.ProgressStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +21,7 @@ import java.util.UUID
 sealed interface TasksCommands {
     data class InputQuery(val query: String) : TasksCommands
     data class SwitchPinned(val taskId: UUID) : TasksCommands
+    data class ChangeStatus(val taskId: UUID, val status: ProgressStatus) : TasksCommands
 }
 
 data class ScreenState(
@@ -87,6 +88,11 @@ class TaskViewModel(
                     is TasksCommands.SwitchPinned -> {
                         switchPinned(command.taskId)
                     }
+
+                    is TasksCommands.ChangeStatus -> {
+                        changeProgress(command.taskId, command.status)
+                    }
+
                 }
             }
         }

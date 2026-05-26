@@ -1,5 +1,6 @@
 package dev.stp.app.domain.entity
 
+import enums.ProgressStatus
 import enums.SyncStatus
 import java.util.UUID
 
@@ -12,5 +13,6 @@ data class Task(
     val createdAt: Long,
     val updatedAt: Long,
     val deadline: Long,
+    val progressStatus: ProgressStatus,
     val syncStatus: SyncStatus
 )

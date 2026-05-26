@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import dev.stp.app.R
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.presentation.components.AccountBottomSheet
+import dev.stp.app.presentation.components.ChangeProgressStatusDialog
 import dev.stp.app.presentation.components.SearchBar
 import dev.stp.app.presentation.components.SwitchScreen
 import dev.stp.app.presentation.components.TaskCard
@@ -44,14 +45,15 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun TasksScreen(
     modifier: Modifier = Modifier,
-    viewModel: TaskViewModel = koinViewModel(),
+    vm: TaskViewModel = koinViewModel(),
     onTaskClick: (Task) -> Unit,
     addTaskClick: () -> Unit,
     notifyClick: () -> Unit,
     settingsClick: () -> Unit,
-    onSchedule: ()->Unit
+    onSchedule: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by vm.state.collectAsState()
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showAuthSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -97,7 +99,7 @@ fun TasksScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(24.dp))
-                    IconButton(onClick = { showAuthSheet = true}) {
+                    IconButton(onClick = { showAuthSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Settings",
@@ -126,16 +128,16 @@ fun TasksScreen(
             item {
                 SearchBar(
                     query = state.query
-                ) { viewModel.processCommand(TasksCommands.InputQuery(it)) }
+                ) { vm.processCommand(TasksCommands.InputQuery(it)) }
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
-            state.pinnedTasks.forEach {
-                item(key = it.id) {
+            state.pinnedTasks.forEach { task ->
+                item(key = task.id) {
                     TaskCard(
-                        task = it,
-                        onLongClick = {},
+                        task = task,
+                        onLongClick = { selectedTask = task },
                         onTaskClick = onTaskClick
                     )
                 }
@@ -163,5 +165,13 @@ fun TasksScreen(
         ) {
             AccountBottomSheet(onDismiss = { showAuthSheet = false })
         }
+    }
+    selectedTask?.let { task ->
+        ChangeProgressStatusDialog(
+            taskId = task.id,
+            currentStatus = task.progressStatus,
+            onDismiss = { selectedTask = null },
+            onSelect = { id, status -> vm.processCommand(TasksCommands.ChangeStatus(id, status)) }
+        )
     }
 }
