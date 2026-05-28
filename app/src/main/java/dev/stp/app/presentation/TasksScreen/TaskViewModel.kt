@@ -7,10 +7,12 @@ import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.actions.getVisibleTask
+import dev.stp.app.presentation.components.TaskFilter
 import enums.ProgressStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -22,10 +24,12 @@ sealed interface TasksCommands {
     data class InputQuery(val query: String) : TasksCommands
     data class SwitchPinned(val taskId: UUID) : TasksCommands
     data class ChangeStatus(val taskId: UUID, val status: ProgressStatus) : TasksCommands
+    data class SelectFilter(val filter: TaskFilter) : TasksCommands
 }
 
 data class ScreenState(
     val query: String = "",
+    val selectedFilter: TaskFilter = TaskFilter.ALL,
     val pinnedTasks: List<Task> = listOf(),
     val tasks: List<Task> = listOf(),
     val generalError: String? = null
@@ -36,18 +40,22 @@ class TaskViewModel(
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
+    private val selectedFilter = MutableStateFlow(TaskFilter.ALL)
     private val _state = MutableStateFlow(ScreenState())
     val state = _state.asStateFlow()
 
     init {
         with(taskRepository) {
-            query
-                .onEach { input ->
-                    _state.update { it.copy(query = input) }
-                }
-                .flatMapLatest { input ->
-                    if (input.isBlank()) getVisibleTask()
-                    else searchTask(input)
+            combine(
+                query,
+                selectedFilter
+            ) { q, filter ->
+                _state.update { it.copy(query = q, selectedFilter = filter) }
+                q to filter
+            }
+                .flatMapLatest { (q, filter) ->
+                    if (q.isBlank()) getVisibleTask()
+                    else searchTask(q)
                 }
                 .onEach { either ->
                     either.fold(
@@ -61,19 +69,31 @@ class TaskViewModel(
                             }
                         },
                         ifRight = { tasks ->
-                            val pinned = tasks.filter { it.isPinned }
-                            val unpinned = tasks.filter { !it.isPinned }
-                            _state.update {
-                                it.copy(
-                                    pinnedTasks = pinned,
-                                    tasks = unpinned,
-                                    generalError = null
-                                )
+                            tasks.progressFilter().let { filteredTask ->
+                                val pinned = filteredTask.filter { it.isPinned }
+                                val unpinned = filteredTask.filter { !it.isPinned }
+                                _state.update {
+                                    it.copy(
+                                        pinnedTasks = pinned,
+                                        tasks = unpinned,
+                                        generalError = null
+                                    )
+                                }
                             }
                         }
                     )
                 }
                 .launchIn(viewModelScope)
+        }
+    }
+
+    fun List<Task>.progressFilter(): List<Task> {
+        return when (selectedFilter.value) {
+            TaskFilter.ALL -> this
+            TaskFilter.IN_PROGRESS -> this.filter { it.progressStatus == ProgressStatus.IN_PROGRESS }
+            TaskFilter.COMPLETE -> this.filter { it.progressStatus == ProgressStatus.COMPLETE }
+            TaskFilter.OVERDUE -> this.filter { it.progressStatus == ProgressStatus.OVERDUE }
+            TaskFilter.PINNED -> this.filter { it.isPinned }
         }
     }
 
@@ -93,9 +113,11 @@ class TaskViewModel(
                         changeProgress(command.taskId, command.status)
                     }
 
+                    is TasksCommands.SelectFilter -> {
+                        selectedFilter.update { command.filter }
+                    }
                 }
             }
         }
-
     }
 }

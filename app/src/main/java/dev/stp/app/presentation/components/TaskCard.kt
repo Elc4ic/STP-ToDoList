@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,13 @@ fun TaskCard(
                 onLongClick = { onLongClick(task) }
             )
             .clip(RoundedCornerShape(8.dp))
-            .background(color = MaterialTheme.colorScheme.primary)
+            .background(
+                color = when (task.progressStatus) {
+                    ProgressStatus.OVERDUE -> MaterialTheme.colorScheme.error
+                    ProgressStatus.COMPLETE -> Color(51, 79, 48, 255)
+                    else -> MaterialTheme.colorScheme.primary
+                }
+            )
             .height(IntrinsicSize.Max)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -109,12 +116,7 @@ fun TaskCard(
                 )
             }
             Text(
-                text = when (task.progressStatus) {
-                    ProgressStatus.COMPLETE -> "Выполнен"
-                    ProgressStatus.CANCELED -> "Отменен"
-                    ProgressStatus.IN_PROGRESS -> "В процессе"
-                    ProgressStatus.OVERDUE -> "Просрочен"
-                },
+                text = task.progressStatus.status,
                 color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.W400,
                 fontSize = 10.sp

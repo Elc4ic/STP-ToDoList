@@ -41,8 +41,18 @@ fun List<Task>.toDto(): List<TaskDto> {
 }
 
 
-fun TaskDbModel.toEntity() =
-    Task(
+fun TaskDbModel.toEntity(): Task {
+    val currentTime = System.currentTimeMillis()
+
+    val isOverdue = currentTime > deadline && processStatus == ProgressStatus.IN_PROGRESS
+
+    val finalProgressStatus = if (isOverdue) {
+        ProgressStatus.OVERDUE
+    } else {
+        processStatus
+    }
+
+    return Task(
         id,
         userId,
         title,
@@ -51,9 +61,11 @@ fun TaskDbModel.toEntity() =
         createdAt,
         updatedAt,
         deadline,
-        processStatus,
+        finalProgressStatus,
         syncStatus
     )
+}
+
 
 fun List<TaskDbModel>.toEntity(): List<Task> {
     return map { it.toEntity() }

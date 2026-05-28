@@ -60,42 +60,46 @@ fun ChangeProgressStatusDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Box(contentAlignment = Alignment.Center) {
-                    OutlinedButton(onClick = { isMenuOpen = true }) {
-                        Text(
-                            text = when (selectedStatus) {
-                                ProgressStatus.COMPLETE -> "Выполнен"
-                                ProgressStatus.CANCELED -> "Отменен"
-                                ProgressStatus.IN_PROGRESS -> "В процессе"
-                                ProgressStatus.OVERDUE -> "Просрочен"
-                            }
-                        )
-                    }
+                if (selectedStatus == ProgressStatus.OVERDUE) {
+                    Text("Просрочено")
+                } else {
+                    Box(contentAlignment = Alignment.Center) {
+                        OutlinedButton(onClick = { isMenuOpen = true }) {
+                            Text(
+                                text = when (selectedStatus) {
+                                    ProgressStatus.COMPLETE -> "Выполнен"
+                                    ProgressStatus.CANCELED -> "Отменен"
+                                    ProgressStatus.IN_PROGRESS -> "В процессе"
+                                    ProgressStatus.OVERDUE -> "Просрочен"
+                                }
+                            )
+                        }
 
-                    DropdownMenu(
-                        expanded = isMenuOpen,
-                        onDismissRequest = { isMenuOpen = false }
-                    ) {
-                        ProgressStatus.entries
-                            .filter { selectedStatus != it }
-                            .forEach { status ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = when (status) {
-                                                ProgressStatus.COMPLETE -> "Выполнен"
-                                                ProgressStatus.CANCELED -> "Отменен"
-                                                ProgressStatus.IN_PROGRESS -> "В процессе"
-                                                ProgressStatus.OVERDUE -> "Просрочен"
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedStatus = status
-                                        isMenuOpen = false
-                                    }
-                                )
-                            }
+                        DropdownMenu(
+                            expanded = isMenuOpen,
+                            onDismissRequest = { isMenuOpen = false }
+                        ) {
+                            ProgressStatus.entries
+                                .filter { selectedStatus != it && it != ProgressStatus.OVERDUE }
+                                .forEach { status ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = when (status) {
+                                                    ProgressStatus.COMPLETE -> "Выполнен"
+                                                    ProgressStatus.CANCELED -> "Отменить"
+                                                    ProgressStatus.IN_PROGRESS -> "В процессе"
+                                                    ProgressStatus.OVERDUE -> "Просрочен"
+                                                }
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedStatus = status
+                                            isMenuOpen = false
+                                        }
+                                    )
+                                }
+                        }
                     }
                 }
 
