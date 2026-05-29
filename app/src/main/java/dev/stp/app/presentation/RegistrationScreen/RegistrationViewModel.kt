@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.repository.AuthRepository
 import dev.stp.app.domain.actions.registrate
-import errors.AppError
+import errors.IError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -92,14 +92,14 @@ class RegistrationViewModel(
         }
     }
 
-    private fun handleError(error: AppError?) {
+    private fun handleError(error: IError?) {
         updateContent { prevState ->
             when (error) {
-                is AppError.Client.Auth.LoginFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Client.Auth.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
-                is AppError.Client.Auth.PasswordTooShort -> prevState.copy(passwordError = error.message)
-                is AppError.Server.Auth.UserAlreadyExists -> prevState.copy(loginError = error.message)
-                is AppError.NetworkError -> prevState.copy(generalError = error.message)
+                is IError.Auth.LoginFieldEmpty -> prevState.copy(loginError = error.message)
+                is IError.Auth.PasswordFieldEmpty -> prevState.copy(loginError = error.message)
+                is IError.Auth.PasswordTooShort -> prevState.copy(passwordError = error.message)
+                is IError.Auth.UserAlreadyExists -> prevState.copy(loginError = error.message)
+                is IError.NetworkError -> prevState.copy(generalError = error.message)
                 else -> prevState.copy(generalError = error?.message ?: "Неизвестная ошибка")
             }
         }

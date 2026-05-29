@@ -11,7 +11,22 @@ import io.ktor.server.application.Application
 fun Application.module() {
     val jwtName = "auth-jwt"
 
-    DatabaseFactory.init()
+    val jdbcUrl = environment.config.propertyOrNull("database.url")?.getString()
+    val driver = environment.config.propertyOrNull("database.driver")?.getString()
+    val user = environment.config.propertyOrNull("database.user")?.getString()
+    val pass = environment.config.propertyOrNull("database.password")?.getString()
+
+    if (jdbcUrl != null && driver != null) {
+        DatabaseFactory.init(
+            jdbcUrl = jdbcUrl,
+            driverClassName = driver,
+            user = user ?: "postgres",
+            pass = pass ?: "postgres"
+        )
+    } else {
+        DatabaseFactory.init()
+    }
+
     configureLogging()
     configureSerialization()
     configureDI()

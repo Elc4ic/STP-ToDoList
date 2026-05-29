@@ -12,7 +12,7 @@ import dev.stp.app.domain.repository.NotificationRepository
 import dev.stp.app.domain.repository.SyncRepository
 import dev.stp.app.domain.repository.TaskRepository
 import enums.SyncStatus
-import errors.AppError
+import errors.IError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -33,7 +33,7 @@ class TaskRepositoryImpl(
         isPinned: Boolean,
         createdAt: Long,
         deadline: Long,
-    ): Either<AppError, Unit> = either {
+    ): Either<IError, Unit> = either {
         val userIdOption = tokenStore.userId.first()
         val userId = userIdOption.getOrNull()
 
@@ -51,7 +51,7 @@ class TaskRepositoryImpl(
                     deadline = deadline
                 )
             )
-        }.mapLeft { AppError.Client.DB.CannotSave() }.bind()
+        }.mapLeft { IError.DB.CannotSaveLocal() }.bind()
         userId?.let {
             syncRepository.trySync()
         }
@@ -59,9 +59,9 @@ class TaskRepositoryImpl(
         notificationRepository.scheduleDeadlineNotification(uuid, title, deadline)
     }
 
-    override suspend fun deleteTask(taskId: UUID): Either<AppError, Unit> = either {
+    override suspend fun deleteTask(taskId: UUID): Either<IError, Unit> = either {
         val task = Either.catch { taskDao.getTask(taskId) }
-            .mapLeft { AppError.Client.DB.NotFound() }
+            .mapLeft { IError.DB.NotFoundLocal() }
             .bind()
 
         Either.catch {
@@ -70,18 +70,18 @@ class TaskRepositoryImpl(
                     syncStatus = SyncStatus.PENDING_DELETE
                 )
             )
-        }.mapLeft { AppError.Client.DB.CannotSave() }.bind()
+        }.mapLeft { IError.DB.CannotSaveLocal() }.bind()
         notificationRepository.cancelDeadlineNotification(taskId)
     }
 
-    override suspend fun editTask(task: Task): Either<AppError, Unit> = either {
+    override suspend fun editTask(task: Task): Either<IError, Unit> = either {
         val editTask = task.toDbModel().copy(
             updatedAt = System.currentTimeMillis(),
             syncStatus = SyncStatus.PENDING_UPDATE
         )
 
         Either.catch { taskDao.addTask(editTask) }
-            .mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+            .mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
         notificationRepository.scheduleDeadlineNotification(
             task.id,
             task.title,
@@ -89,38 +89,38 @@ class TaskRepositoryImpl(
         )
     }
 
-    override fun getAllTasks(): Either<AppError, Flow<List<Task>>> = either {
+    override fun getAllTasks(): Either<IError, Flow<List<Task>>> = either {
         Either.catch {
             taskDao.getAllTask().map { it.toEntity() }
-        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+        }.mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
     }
 
-    override suspend fun getAllNotSyncTasks(): Either<AppError, List<Task>> = either {
+    override suspend fun getAllNotSyncTasks(): Either<IError, List<Task>> = either {
         Either.catch {
             taskDao.getAllNotSyncTask().map { it.toEntity() }
-        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+        }.mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
     }
 
-    override suspend fun getTask(taskId: UUID): Either<AppError, Task> = either {
+    override suspend fun getTask(taskId: UUID): Either<IError, Task> = either {
         Either.catch {
             taskDao.getTask(taskId).toEntity()
-        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+        }.mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
     }
 
-    override fun searchTask(query: String): Flow<Either<AppError, List<Task>>> {
+    override fun searchTask(query: String): Flow<Either<IError, List<Task>>> {
         return taskDao.searchTask(query)
             .map { dbModels ->
                 val entities = dbModels.toEntity()
-                Either.Right(entities) as Either<AppError, List<Task>>
+                Either.Right(entities) as Either<IError, List<Task>>
             }
             .catch { throwable ->
-                emit(Either.Left(AppError.Client.DB.WriteError(throwable)))
+                emit(Either.Left(IError.DB.WriteErrorLocal(throwable)))
             }
     }
 
-    override suspend fun switchPinned(taskId: UUID): Either<AppError, Unit> = either {
+    override suspend fun switchPinned(taskId: UUID): Either<IError, Unit> = either {
         val task = Either.catch { taskDao.getTask(taskId) }
-            .mapLeft { AppError.Client.DB.NotFound() }
+            .mapLeft { IError.DB.NotFoundLocal() }
             .bind()
 
         Either.catch {
@@ -131,15 +131,15 @@ class TaskRepositoryImpl(
                     syncStatus = SyncStatus.PENDING_UPDATE
                 )
             )
-        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+        }.mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
     }
 
     override suspend fun getTasksForPeriod(
         startDay: Long,
         endDay: Long
-    ): Either<AppError, Flow<List<Task>>> = either {
+    ): Either<IError, Flow<List<Task>>> = either {
         Either.catch {
             taskDao.getTasksForPeriod(startDay, endDay).map { it.toEntity() }
-        }.mapLeft { AppError.Client.DB.NotFound() }.bind()
+        }.mapLeft { IError.DB.NotFoundLocal() }.bind()
     }
 }

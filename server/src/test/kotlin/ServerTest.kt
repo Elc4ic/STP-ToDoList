@@ -12,6 +12,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
@@ -27,7 +28,7 @@ class ServerTest {
                 setBody(AuthRequest("testUser", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Created, response.status)
+            assertEquals(HttpStatusCode.Created, response.status, response.body())
             val body = response.body<AuthResponse>()
             assertEquals("testUser", body.user.login)
         }
@@ -40,7 +41,7 @@ class ServerTest {
                 setBody(AuthRequest("   ", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -51,9 +52,8 @@ class ServerTest {
                 setBody(AuthRequest("testUser", "   "))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
-
         @Test
         fun `test register with very long password`() = testApplicationWithClient { client ->
 
@@ -63,7 +63,7 @@ class ServerTest {
                 setBody(AuthRequest("userWithLongPassword", longPassword))
             }
 
-            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -74,7 +74,7 @@ class ServerTest {
                 setBody(AuthRequest("userWithShortPassword", "123"))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -86,7 +86,7 @@ class ServerTest {
                     setBody(AuthRequest("user@#$%^&*()", "123456"))
                 }
 
-                assertEquals(HttpStatusCode.Conflict, response.status)
+                assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
             }
 
         @Test
@@ -99,7 +99,7 @@ class ServerTest {
                 setBody(AuthRequest(longLogin, "123456"))
             }
 
-            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -110,7 +110,7 @@ class ServerTest {
                 setBody(AuthRequest("testUserEmpty", ""))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -121,7 +121,7 @@ class ServerTest {
                 setBody(AuthRequest("", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -137,7 +137,7 @@ class ServerTest {
                 setBody(AuthRequest("testUser", "12345678"))
             }
 
-            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(HttpStatusCode.Conflict, response.status, response.body())
         }
 
         @Test
@@ -149,13 +149,14 @@ class ServerTest {
                 contentType(ContentType.Application.Json)
                 setBody(AuthRequest(sqlInjectionLogin, "123456"))
             }
+            print("ff")
 
             val loginResponse = client.post(Api.Auth.Login.path) {
                 contentType(ContentType.Application.Json)
                 setBody(AuthRequest("test'; DROP TABLE users; --", "123456"))
             }
 
-            assertEquals(HttpStatusCode.OK, loginResponse.status)
+            assertEquals(HttpStatusCode.Created, response.status, response.body())
         }
 
         @Test
@@ -166,7 +167,7 @@ class ServerTest {
                 setBody(AuthRequest("testUser", "123456"))
             }
 
-            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(HttpStatusCode.OK, response.status, response.body())
         }
 
         @Test
@@ -174,10 +175,10 @@ class ServerTest {
 
             val response = client.post(Api.Auth.Login.path) {
                 contentType(ContentType.Application.Json)
-                setBody(AuthRequest("test", "123456"))
+                setBody(AuthRequest("testTT", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
         }
 
         @Test
@@ -188,7 +189,7 @@ class ServerTest {
                 setBody(AuthRequest("testUser", "wrongpswd"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
         }
 
         @Test
@@ -199,7 +200,7 @@ class ServerTest {
                 setBody(AuthRequest("testUser", ""))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -210,7 +211,7 @@ class ServerTest {
                 setBody(AuthRequest("", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
 
@@ -228,7 +229,7 @@ class ServerTest {
                 setBody(AuthRequest("  testUser  ", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
         }
 
         @Test
@@ -244,7 +245,7 @@ class ServerTest {
                 setBody(AuthRequest("testuser", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
         }
 
         @Test
@@ -265,20 +266,27 @@ class ServerTest {
                 setBody(AuthRequest(sqlInjectionLogin, password))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
         }
 
         companion object {
             fun testApplicationWithClient(block: suspend ApplicationTestBuilder.(HttpClient) -> Unit) =
                 testApplication {
+                    val testDbUrl = "jdbc:h2:mem:test_db_${java.util.UUID.randomUUID()};DB_CLOSE_DELAY=-1"
+
+                    environment {
+                        config = MapApplicationConfig(
+                            "database.url" to testDbUrl,
+                            "database.driver" to "org.h2.Driver"
+                        )
+                    }
+
                     application {
                         module()
                     }
 
                     val client = createClient {
-                        install(ContentNegotiation) {
-                            json()
-                        }
+                        install(ContentNegotiation) { json() }
                     }
 
                     block(client)

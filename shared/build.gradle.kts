@@ -13,6 +13,8 @@ kotlin {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation(libs.ktor.client.android)
+    implementation(libs.arrow.core)
     implementation(libs.dotenv.kotlin)
     api(libs.serialization.kotlinx.json)
 }

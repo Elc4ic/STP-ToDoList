@@ -1,28 +1,20 @@
 package dev.stp.service
 
-import apiRoutes.Api
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.stp.domain.repository.TaskRepository
-import dev.stp.domain.repository.UserRepository
-import dev.stp.infrastructure.schema.TasksTable
 import dto.GetTaskResponse
 import dto.SyncRequest
 import dto.SyncResponse
 import dto.SyncTaskResponse
 import enums.ResultCode
 import enums.SyncStatus
-import errors.AppError
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.update
+import errors.IError
 import java.util.UUID
 
 interface TaskService {
     suspend fun sync(userId: UUID, request: SyncRequest): SyncResponse
-    suspend fun getAll(userId: UUID): Either<AppError, GetTaskResponse>
+    suspend fun getAll(userId: UUID): Either<IError, GetTaskResponse>
 }
 
 class TaskServiceImpl(
@@ -54,9 +46,9 @@ class TaskServiceImpl(
         })
     }
 
-    override suspend fun getAll(userId: UUID): Either<AppError, GetTaskResponse> = either {
+    override suspend fun getAll(userId: UUID): Either<IError, GetTaskResponse> = either {
         val tasks = Either.catch { taskRepository.getAllByUserId(userId) }
-            .mapLeft { AppError.Server.DB.NotFound() }
+            .mapLeft { IError.DB.NotFoundRemote() }
             .bind()
 
         GetTaskResponse(tasks.map { it.toDto() })

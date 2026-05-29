@@ -4,8 +4,6 @@ import dev.stp.domain.entity.UserEntity
 import dev.stp.domain.entity.toUserEntity
 import dev.stp.infrastructure.schema.UsersTable
 import dev.stp.infrastructure.security.PasswordHasher
-import dto.AuthRequest
-import dto.UserDto
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
@@ -13,8 +11,7 @@ import java.util.UUID
 interface UserRepository {
     suspend fun findByLogin(login: String): UserEntity?
     suspend fun findById(id: String): UserEntity?
-
-    suspend fun createUser(request: AuthRequest): UserDto
+    suspend fun createUser(log: String, password: String): UserEntity
 }
 
 class PostgresUserRepository : UserRepository {
@@ -32,18 +29,20 @@ class PostgresUserRepository : UserRepository {
             .singleOrNull()
     }
 
-    override suspend fun createUser(request: AuthRequest): UserDto = dbQuery {
+    override suspend fun createUser(log: String, password: String): UserEntity = dbQuery {
         val newId = UUID.randomUUID()
+        val hash = PasswordHasher.hash(password)
 
         UsersTable.insert {
             it[id] = newId
-            it[login] = request.login
-            it[passwordHash] = PasswordHasher.hash(request.password)
+            it[login] = log
+            it[passwordHash] = hash
         }
 
-        UserDto(
-            id = newId.toString(),
-            login = request.login
+        UserEntity(
+            id = newId,
+            login = log,
+            passwordHash = hash
         )
     }
 }

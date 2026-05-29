@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.domain.repository.TaskRepository
 import dev.stp.app.domain.actions.getVisibleTask
-import errors.AppError
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
