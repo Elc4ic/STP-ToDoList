@@ -39,7 +39,7 @@ class UserServiceImpl(
 
     override suspend fun register(request: AuthRequest): Either<AppError, AuthResponse> = either {
         val existingUser = userRepository.findByLogin(request.login)
-        ensureNotNull(existingUser) { AppError.Server.Auth.UserAlreadyExists(request.login) }
+        ensure(existingUser == null) { AppError.Server.Auth.UserAlreadyExists(request.login) }
         val user = userRepository.createUser(request)
         val accessToken = tokenManager.generateAccessToken(user.id, user.login)
         val refreshToken = tokenManager.generateRefreshToken(user.id)

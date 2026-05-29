@@ -45,6 +45,120 @@ class ServerTest {
         }
 
         @Test
+        fun `test register with login only spaces`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("   ", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register with password only spaces`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "   "))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register with very long password`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val longPassword = "123456".repeat(20)
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("userWithLongPassword", longPassword))
+            }
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+
+        @Test
+        fun `test register with short password`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("userWithShortPassword", "123"))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register with special characters in login`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("user@#$%^&*()", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register with very long login`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient { install(ContentNegotiation) { json() } }
+            val longLogin = "a".repeat(1000)
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest(longLogin, "123456"))
+            }
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+
+        @Test
         fun `test register empty password`() = testApplication {
             application {
                 module()
@@ -78,27 +192,7 @@ class ServerTest {
 
             val response = client.post(Api.Auth.Register.path) {
                 contentType(ContentType.Application.Json)
-                setBody(AuthRequest("", "12345"))
-            }
-
-            assertEquals(HttpStatusCode.Conflict, response.status)
-        }
-
-        @Test
-        fun `test register empty login and password`() = testApplication {
-            application {
-                module()
-            }
-
-            val client = createClient {
-                this.install(ContentNegotiation) {
-                    json()
-                }
-            }
-
-            val response = client.post(Api.Auth.Register.path) {
-                contentType(ContentType.Application.Json)
-                setBody(AuthRequest("", ""))
+                setBody(AuthRequest("", "123456"))
             }
 
             assertEquals(HttpStatusCode.Conflict, response.status)
@@ -127,6 +221,33 @@ class ServerTest {
             }
 
             assertEquals(HttpStatusCode.Conflict, response.status)
+        }
+
+        @Test
+        fun `test register with sql injection`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val sqlInjectionLogin = "test'; DROP TABLE users; --"
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest(sqlInjectionLogin, "123456"))
+            }
+
+            val loginResponse = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("test'; DROP TABLE users; --", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.OK, loginResponse.status)
         }
 
         @Test
@@ -164,6 +285,144 @@ class ServerTest {
             val response = client.post(Api.Auth.Login.path) {
                 contentType(ContentType.Application.Json)
                 setBody(AuthRequest("test", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+        @Test
+        fun `test login exist user with wrong password`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "wrongpswd"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+        @Test
+        fun `test login with empty password`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", ""))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+        @Test
+        fun `test login with empty login`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+
+        // на ваше усмотрение, если будете обрезать пробелы, то поменяйте статус на OK
+        @Test
+        fun `test login with whitespace in login`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "123456"))
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("  testUser  ", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+        @Test
+        fun `test login with case-sensitive login`() = testApplication {
+            application {
+                module()
+            }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("TestUser", "123456"))
+            }
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testuser", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+        }
+
+        @Test
+        fun `test login with sql injection`() = testApplication {
+            application {
+                module()
+            }
+
+            val client = createClient {
+                this.install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val normalUser = "normal_user"
+            val password = "123456"
+
+            client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest(normalUser, password))
+            }
+
+            val sqlInjectionLogin = "' OR '1'='1"
+
+            val response = client.post(Api.Auth.Login.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest(sqlInjectionLogin, password))
             }
 
             assertEquals(HttpStatusCode.Unauthorized, response.status)
