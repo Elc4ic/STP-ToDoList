@@ -3,7 +3,6 @@ package dev.stp.app.domain.repository
 import arrow.core.Either
 import dev.stp.app.domain.entity.Task
 import enums.ProgressStatus
-import errors.AppError
 import errors.IError
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -34,7 +33,7 @@ interface TaskRepository {
     suspend fun changeProgress(
         taskId: UUID,
         status: ProgressStatus
-    ): Either<AppError, Unit>
+    ): Either<IError, Unit>
 
-    suspend fun getTasksForPeriod(startDay: Long, endDay: Long): Either<AppError, Flow<List<Task>>>
+    suspend fun getTasksForPeriod(startDay: Long, endDay: Long): Either<IError, Flow<List<Task>>>
 }

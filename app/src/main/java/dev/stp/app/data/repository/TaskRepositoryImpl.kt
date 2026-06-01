@@ -138,9 +138,9 @@ class TaskRepositoryImpl(
     override suspend fun changeProgress(
         taskId: UUID,
         status: ProgressStatus
-    ): Either<AppError, Unit> = either {
+    ): Either<IError, Unit> = either {
         val task = Either.catch { taskDao.getTask(taskId) }
-            .mapLeft { AppError.Client.DB.NotFound() }
+            .mapLeft { IError.DB.NotFoundLocal() }
             .bind()
 
         Either.catch {
@@ -151,7 +151,7 @@ class TaskRepositoryImpl(
                     syncStatus = SyncStatus.PENDING_UPDATE
                 )
             )
-        }.mapLeft { AppError.Client.DB.WriteError(it) }.bind()
+        }.mapLeft { IError.DB.WriteErrorLocal(it) }.bind()
     }
 
     override suspend fun getTasksForPeriod(
