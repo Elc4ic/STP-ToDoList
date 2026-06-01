@@ -58,7 +58,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path1_noServerTasksAndNoLocalTasks_databaseRemainsEmpty() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4F -> 7 -> 8 -> 9F -> 13
         repository.syncLocalDatabaseWithServer(
             serverTasks = emptyList(),
             userId = userId
@@ -71,7 +70,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path2_serverTaskIsNotPending_addsServerTaskAsSynchronized() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4T -> 5T -> 6 -> 4F -> 7 -> 8 -> 9T -> 10F -> 9F -> 13
         val serverTask = task(id = uuid(2), syncStatus = SyncStatus.PENDING_INSERT)
 
         repository.syncLocalDatabaseWithServer(
@@ -88,7 +86,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path3_serverTaskAlreadyHasPendingLocalVersion_doesNotOverwritePendingLocalTask() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4T -> 5F -> 4F -> 7 -> 8 -> 9T -> 10F -> 9F -> 13
         val taskId = uuid(3)
         val pendingLocalTask = task(
             id = taskId,
@@ -116,7 +113,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path4_localSynchronizedTaskIsAbsentOnServer_deletesLocalTask() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4F -> 7 -> 8 -> 9T -> 10T -> 11T -> 12 -> 9F -> 13
         val localOnlyTask = task(id = uuid(4), syncStatus = SyncStatus.SYNCHRONIZED)
         taskDao.addTask(localOnlyTask)
 
@@ -132,7 +128,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path5_localPendingDeleteTaskIsAbsentOnServer_doesNotDeleteLocalTask() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4F -> 7 -> 8 -> 9T -> 10T -> 11F -> 9F -> 13
         val localPendingTask = task(id = uuid(5), syncStatus = SyncStatus.PENDING_DELETE)
         taskDao.addTask(localPendingTask)
 
@@ -149,9 +144,6 @@ class SyncRepositoryImplWhiteBoxTest {
 
     @Test
     fun path6_localTaskExistsOnServer_firstDeleteConditionIsFalse_taskIsNotDeleted() = runBlocking {
-        // CFG path: 1 -> 2 -> 3 -> 4T -> 5F -> 4F -> 7 -> 8 -> 9T -> 10F -> 9F -> 13
-        // This path explicitly covers the false branch of:
-        // !serverTaskIds.contains(localTask.id)
         val taskId = uuid(6)
         val localPendingTask = task(
             id = taskId,
