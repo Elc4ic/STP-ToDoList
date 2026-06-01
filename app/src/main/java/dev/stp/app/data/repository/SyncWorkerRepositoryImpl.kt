@@ -14,17 +14,16 @@ import dev.stp.app.data.datasource.SyncWorker
 import dev.stp.app.data.datasource.TokenStore
 import dev.stp.app.data.localDB.TaskDao
 import dev.stp.app.data.localDB.TaskDbModel
-import dev.stp.app.data.mapper.safeApiCall
 import dev.stp.app.data.mapper.toDbModels
 import dev.stp.app.domain.repository.SyncRepository
 import dto.GetTaskResponse
 import dto.SyncResponse
 import enums.ResultCode
 import enums.SyncStatus
-import errors.AppError
+import errors.IError
+import errors.safeRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
-import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.first
 import java.util.UUID
 
@@ -75,21 +74,17 @@ class SyncRepositoryImpl(
         }
     }
 
-    override suspend fun getFromServer(): Either<AppError, Unit> = either {
+    override suspend fun getFromServer(): Either<IError, Unit> = either {
         val userId = tokenStore.userId.first()
-            .toEither { AppError.Unknown("Пользователь не авторизован") }
+            .toEither { IError.Unknown("Пользователь не авторизован") }
             .bind()
 
-        val response = safeApiCall<GetTaskResponse>(
-            call = { client.post(Api.Tasks.GetAll.url()) },
-            mapError = { status ->
-                if (status == HttpStatusCode.NotFound) AppError.Server.Auth.UserNotFound()
-                else null
-            }
+        val response = client.safeRequest<GetTaskResponse>(
+            call = { post(Api.Tasks.GetAll.url()) },
         ).bind()
 
         val tasks = response.tasks.toDbModels()
-        ensure(tasks.isNotEmpty()) { AppError.Unknown("Нет заданий") }
+        ensure(tasks.isNotEmpty()) { IError.Unknown("Нет заданий") }
         syncLocalDatabaseWithServer(tasks, userId)
     }
 
