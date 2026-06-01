@@ -65,7 +65,6 @@ class LogInViewModel(
                     authRepository.loginName().collect {
                         _state.value = LogInState.Authorized(userName = it.getOrElse { "User" })
                     }
-
                 } else {
                     _state.value = LogInState.Content()
                 }

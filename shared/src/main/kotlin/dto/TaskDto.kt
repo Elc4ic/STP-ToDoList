@@ -12,5 +12,6 @@ data class TaskDto(
     val createdAt: Long,
     val updatedAt: Long,
     val deadline: Long,
+    val progressStatus: String,
     val syncStatus: String
 )

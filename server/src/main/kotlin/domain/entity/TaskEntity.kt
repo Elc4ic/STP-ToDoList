@@ -2,6 +2,7 @@ package dev.stp.domain.entity
 
 import dev.stp.infrastructure.schema.TasksTable
 import dto.TaskDto
+import enums.ProgressStatus
 import org.jetbrains.exposed.sql.ResultRow
 import java.util.UUID
 
@@ -13,7 +14,8 @@ data class TaskEntity(
     val isPinned: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-    val deadline: Long
+    val deadline: Long,
+    val progressStatus: ProgressStatus,
 ) {
     fun toDto(): TaskDto = TaskDto(
         id = this.id.toString(),
@@ -24,7 +26,8 @@ data class TaskEntity(
         createdAt = this.createdAt,
         updatedAt = updatedAt,
         deadline = this.deadline,
-        syncStatus = "SYNCHRONIZED"
+        progressStatus = this.progressStatus.name,
+        syncStatus = "SYNCHRONIZED",
     )
 }
 
@@ -36,5 +39,6 @@ fun ResultRow.toTaskEntity() = TaskEntity(
     isPinned = this[TasksTable.isPinned],
     createdAt = this[TasksTable.createdAt],
     updatedAt = this[TasksTable.updatedAt],
-    deadline = this[TasksTable.deadline]
+    deadline = this[TasksTable.deadline],
+    progressStatus = ProgressStatus.valueOf(this[TasksTable.progressStatus])
 )

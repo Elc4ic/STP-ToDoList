@@ -4,12 +4,23 @@ package dev.stp.app.data.mapper
 import dev.stp.app.data.localDB.TaskDbModel
 import dev.stp.app.domain.entity.Task
 import dto.TaskDto
+import enums.ProgressStatus
 import enums.SyncStatus
 import java.util.UUID
-import kotlin.uuid.Uuid
 
 fun Task.toDbModel() =
-    TaskDbModel(id, userId, title, content, isPinned, createdAt, updatedAt, deadline, syncStatus)
+    TaskDbModel(
+        id,
+        userId,
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        progressStatus,
+        syncStatus
+    )
 
 fun Task.toDto() =
     TaskDto(
@@ -21,6 +32,7 @@ fun Task.toDto() =
         createdAt,
         updatedAt,
         deadline,
+        progressStatus.name,
         syncStatus.name
     )
 
@@ -29,8 +41,31 @@ fun List<Task>.toDto(): List<TaskDto> {
 }
 
 
-fun TaskDbModel.toEntity() =
-    Task(id, userId, title, content, isPinned, createdAt, updatedAt, deadline, syncStatus)
+fun TaskDbModel.toEntity(): Task {
+    val currentTime = System.currentTimeMillis()
+
+    val isOverdue = currentTime > deadline && processStatus == ProgressStatus.IN_PROGRESS
+
+    val finalProgressStatus = if (isOverdue) {
+        ProgressStatus.OVERDUE
+    } else {
+        processStatus
+    }
+
+    return Task(
+        id,
+        userId,
+        title,
+        content,
+        isPinned,
+        createdAt,
+        updatedAt,
+        deadline,
+        finalProgressStatus,
+        syncStatus
+    )
+}
+
 
 fun List<TaskDbModel>.toEntity(): List<Task> {
     return map { it.toEntity() }
@@ -46,7 +81,8 @@ fun TaskDbModel.toDto() =
         createdAt,
         updatedAt,
         deadline,
-        syncStatus = syncStatus.name
+        processStatus.name,
+        syncStatus.name
     )
 
 
@@ -60,6 +96,7 @@ fun TaskDto.toDbModel() =
         createdAt,
         updatedAt,
         deadline,
+        ProgressStatus.valueOf(progressStatus),
         SyncStatus.valueOf(syncStatus)
     )
 
@@ -75,6 +112,7 @@ fun TaskDto.toTask() =
         createdAt,
         updatedAt,
         deadline,
+        ProgressStatus.valueOf(progressStatus),
         SyncStatus.valueOf(syncStatus)
     )
 

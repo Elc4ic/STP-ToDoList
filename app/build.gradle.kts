@@ -58,6 +58,7 @@ android {
 dependencies {
     // kotlin
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.foundation)
     implementation(libs.kotlinx.serialization.json)
 
     // shared

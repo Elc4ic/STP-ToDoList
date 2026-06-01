@@ -3,6 +3,7 @@
 package dev.stp.app.presentation.TasksScreen
 
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,23 +36,26 @@ import androidx.compose.ui.unit.dp
 import dev.stp.app.R
 import dev.stp.app.domain.entity.Task
 import dev.stp.app.presentation.components.AccountBottomSheet
+import dev.stp.app.presentation.components.ChangeProgressStatusDialog
 import dev.stp.app.presentation.components.SearchBar
 import dev.stp.app.presentation.components.SwitchScreen
 import dev.stp.app.presentation.components.TaskCard
+import dev.stp.app.presentation.components.TaskFilterRow
 import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun TasksScreen(
     modifier: Modifier = Modifier,
-    viewModel: TaskViewModel = koinViewModel(),
+    vm: TaskViewModel = koinViewModel(),
     onTaskClick: (Task) -> Unit,
     addTaskClick: () -> Unit,
     notifyClick: () -> Unit,
     settingsClick: () -> Unit,
-    onSchedule: ()->Unit
+    onSchedule: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by vm.state.collectAsState()
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showAuthSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -97,7 +101,7 @@ fun TasksScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(24.dp))
-                    IconButton(onClick = { showAuthSheet = true}) {
+                    IconButton(onClick = { showAuthSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Settings",
@@ -109,59 +113,72 @@ fun TasksScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            contentPadding = innerPadding
+        Column(
+            modifier = modifier.padding(innerPadding)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
-            }
 
-            item {
-                SwitchScreen(onSchedule = onSchedule)
-            }
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
 
-            item {
-                SearchBar(
-                    query = state.query
-                ) { viewModel.processCommand(TasksCommands.InputQuery(it)) }
-            }
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-            state.pinnedTasks.forEach {
-                item(key = it.id) {
-                    TaskCard(
-                        task = it,
-                        onLongClick = {},
-                        onTaskClick = onTaskClick
-                    )
+            Spacer(modifier = Modifier.height(10.dp))
+            SwitchScreen(onSchedule = onSchedule)
+            Spacer(modifier = Modifier.height(20.dp))
+            SearchBar(
+                query = state.query
+            ) { vm.processCommand(TasksCommands.InputQuery(it)) }
+            TaskFilterRow(
+                selectedFilter = state.selectedFilter,
+                onFilterSelected = { filter ->
+                    vm.processCommand(TasksCommands.SelectFilter(filter))
                 }
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyColumn {
+                state.pinnedTasks.forEach { task ->
+                    item(key = task.id) {
+                        TaskCard(
+                            task = task,
+                            onLongClick = { selectedTask = task },
+                            onTaskClick = onTaskClick
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
-            }
-            state.tasks.forEach {
-                item(key = it.id) {
-                    TaskCard(
-                        task = it,
-                        onLongClick = {},
-                        onTaskClick = onTaskClick
-                    )
-                }
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                state.tasks.forEach {
+                    item(key = it.id) {
+                        TaskCard(
+                            task = it,
+                            onLongClick = {},
+                            onTaskClick = onTaskClick
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
-    }
-    if (showAuthSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAuthSheet = false }
-        ) {
-            AccountBottomSheet(onDismiss = { showAuthSheet = false })
+        if (showAuthSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showAuthSheet = false }
+            ) {
+                AccountBottomSheet(onDismiss = { showAuthSheet = false })
+            }
+        }
+        selectedTask?.let { task ->
+            ChangeProgressStatusDialog(
+                taskId = task.id,
+                currentStatus = task.progressStatus,
+                onDismiss = { selectedTask = null },
+                onSelect = { id, status ->
+                    vm.processCommand(
+                        TasksCommands.ChangeStatus(
+                            id,
+                            status
+                        )
+                    )
+                }
+            )
         }
     }
 }

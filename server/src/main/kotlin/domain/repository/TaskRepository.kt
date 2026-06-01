@@ -9,7 +9,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
@@ -42,6 +41,7 @@ class PostgresTaskRepository : TaskRepository {
                     it[isPinned] = dto.isPinned
                     it[updatedAt] = dto.updatedAt
                     it[deadline] = dto.deadline
+                    it[progressStatus] = dto.progressStatus
                 }
             }
         }
@@ -59,6 +59,7 @@ class PostgresTaskRepository : TaskRepository {
             it[createdAt] = dto.createdAt
             it[updatedAt] = dto.updatedAt
             it[deadline] = dto.deadline
+            it[progressStatus] = dto.progressStatus
         }.value.toString()
     }
 

@@ -1,6 +1,5 @@
 package dev.stp.infrastructure.schema
 
-import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
@@ -12,4 +11,5 @@ object TasksTable : UUIDTable("tasks") {
     val createdAt = long("created_at")
     val updatedAt = long("updated_at")
     val deadline = long("deadline")
+    val progressStatus = varchar("progress_status", 20)
 }
