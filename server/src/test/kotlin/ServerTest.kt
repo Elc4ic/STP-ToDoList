@@ -128,6 +128,51 @@ class ServerTest {
         }
 
         @Test
+        fun `test register with short login`() = testApplicationWithClient { client ->
+            val response = client.safeRequest<AuthResponse>(
+                call = {
+                    post(Api.Auth.Register.path) {
+                        contentType(ContentType.Application.Json)
+                        setBody(AuthRequest("u", "123456"))
+                    }
+                },
+                mapError = { statusCode ->
+                    when (statusCode) {
+                        HttpStatusCode.BadRequest -> IError.Auth.LoginTooShort()
+                        else -> null
+                    }
+                }
+            )
+
+            assertTrue(response.isLeft())
+            val error = (response as Either.Left).value
+            assertIs<IError.Auth.LoginTooShort>(error)
+        }
+
+        @Test
+        fun `test register with long login`() = testApplicationWithClient { client ->
+            val longLogin = "123456".repeat(20)
+            val response = client.safeRequest<AuthResponse>(
+                call = {
+                    post(Api.Auth.Register.path) {
+                        contentType(ContentType.Application.Json)
+                        setBody(AuthRequest(longLogin, "123456"))
+                    }
+                },
+                mapError = { statusCode ->
+                    when (statusCode) {
+                        HttpStatusCode.BadRequest -> IError.Auth.LoginTooLong()
+                        else -> null
+                    }
+                }
+            )
+
+            assertTrue(response.isLeft())
+            val error = (response as Either.Left).value
+            assertIs<IError.Auth.LoginTooLong>(error)
+        }
+
+        @Test
         fun `test register with special characters in login`() = testApplicationWithClient { client ->
             val response = client.safeRequest<AuthResponse>(
                 call = {
