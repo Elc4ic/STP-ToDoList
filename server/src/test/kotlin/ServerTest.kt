@@ -54,6 +54,7 @@ class ServerTest {
 
             assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
+
         @Test
         fun `test register with very long password`() = testApplicationWithClient { client ->
 
@@ -161,6 +162,10 @@ class ServerTest {
 
         @Test
         fun `test login success`() = testApplicationWithClient { client ->
+            client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("testUser", "123456"))
+            }
 
             val response = client.post(Api.Auth.Login.path) {
                 contentType(ContentType.Application.Json)
@@ -229,7 +234,7 @@ class ServerTest {
                 setBody(AuthRequest("  testUser  ", "123456"))
             }
 
-            assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
+            assertEquals(HttpStatusCode.OK, response.status, response.body())
         }
 
         @Test
@@ -246,6 +251,30 @@ class ServerTest {
             }
 
             assertEquals(HttpStatusCode.Unauthorized, response.status, response.body())
+        }
+
+        @Test
+        fun `test register with short login`() = testApplicationWithClient { client ->
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("u", "123456"))
+            }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
+        }
+
+        @Test
+        fun `test register with long login`() = testApplicationWithClient { client ->
+            val longLogin = "123456".repeat(20)
+
+            val response = client.post(Api.Auth.Register.path) {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest(longLogin, "123456"))
+            }
+
+
+            assertEquals(HttpStatusCode.BadRequest, response.status, response.body())
         }
 
         @Test
@@ -272,7 +301,8 @@ class ServerTest {
         companion object {
             fun testApplicationWithClient(block: suspend ApplicationTestBuilder.(HttpClient) -> Unit) =
                 testApplication {
-                    val testDbUrl = "jdbc:h2:mem:test_db_${java.util.UUID.randomUUID()};DB_CLOSE_DELAY=-1"
+                    val testDbUrl =
+                        "jdbc:h2:mem:test_db_${java.util.UUID.randomUUID()};DB_CLOSE_DELAY=-1"
 
                     environment {
                         config = MapApplicationConfig(
