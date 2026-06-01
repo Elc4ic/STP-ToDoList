@@ -2,8 +2,6 @@
 
 package dev.stp.app.presentation.EditTaskScreen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +55,6 @@ import org.koin.core.parameter.parametersOf
 import java.util.UUID
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EditScreen(
     taskId: UUID,

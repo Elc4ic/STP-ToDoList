@@ -3,13 +3,12 @@ package dev.stp.app.presentation.LogInScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.getOrElse
+import dev.stp.app.domain.actions.logIn
 import dev.stp.app.domain.repository.AuthRepository
 import dev.stp.app.domain.repository.SyncRepository
-import dev.stp.app.domain.actions.logIn
 import errors.AppError
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,7 +57,6 @@ class LogInViewModel(
     val state = _state.asStateFlow()
 
     private val _event = MutableSharedFlow<LogInEvent>()
-    val event = _event.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -67,7 +65,6 @@ class LogInViewModel(
                     authRepository.loginName().collect {
                         _state.value = LogInState.Authorized(userName = it.getOrElse { "User" })
                     }
-
                 } else {
                     _state.value = LogInState.Content()
                 }
