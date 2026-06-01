@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -37,16 +36,14 @@ class DeadlineNotificationWorker(
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "task_deadline_channel"
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Дедлайны задач",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Напоминания о приближающихся дедлайнах"
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            channelId,
+            "Дедлайны задач",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Напоминания о приближающихся дедлайнах"
         }
+        notificationManager.createNotificationChannel(channel)
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

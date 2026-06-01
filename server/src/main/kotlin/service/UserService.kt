@@ -9,12 +9,13 @@ import dev.stp.infrastructure.security.PasswordHasher
 import dev.stp.infrastructure.security.TokenManager
 import dto.AuthRequest
 import dto.AuthResponse
-import errors.AppError
+import errors.IError
+import validator.AuthValidator
 
 interface UserService {
-    suspend fun authenticate(request: AuthRequest): Either<AppError, AuthResponse>
-    suspend fun register(request: AuthRequest): Either<AppError, AuthResponse>
-    suspend fun refresh(refreshToken: String): Either<AppError, AuthResponse>
+    suspend fun authenticate(request: AuthRequest): Either<IError, AuthResponse>
+    suspend fun register(request: AuthRequest): Either<IError, AuthResponse>
+    suspend fun refresh(refreshToken: String): Either<IError, AuthResponse>
 }
 
 class UserServiceImpl(
@@ -22,13 +23,18 @@ class UserServiceImpl(
     private val tokenManager: TokenManager
 ) : UserService {
 
-    override suspend fun authenticate(request: AuthRequest): Either<AppError, AuthResponse> =
+    override suspend fun authenticate(request: AuthRequest): Either<IError, AuthResponse> =
         either {
-            val user = userRepository.findByLogin(request.login)
-            ensureNotNull(user) { AppError.Server.Auth.InvalidCredentials() }
+            val (validLogin, validPassword) = AuthValidator.validateCredentials(
+                request.login,
+                request.password
+            ).bind()
 
-            ensure(PasswordHasher.eqHash(request.password, user.passwordHash)) {
-                AppError.Server.Auth.InvalidCredentials()
+            val user = userRepository.findByLogin(validLogin)
+            ensureNotNull(user) { IError.Auth.InvalidCredentials() }
+
+            ensure(PasswordHasher.eqHash(validPassword, user.passwordHash)) {
+                IError.Auth.InvalidCredentials()
             }
 
             val accessToken = tokenManager.generateAccessToken(user.id.toString(), user.login)
@@ -37,21 +43,27 @@ class UserServiceImpl(
             AuthResponse(accessToken, refreshToken, user.toDto())
         }
 
-    override suspend fun register(request: AuthRequest): Either<AppError, AuthResponse> = either {
-        val existingUser = userRepository.findByLogin(request.login)
-        ensureNotNull(existingUser) { AppError.Server.Auth.UserAlreadyExists(request.login) }
-        val user = userRepository.createUser(request)
-        val accessToken = tokenManager.generateAccessToken(user.id, user.login)
-        val refreshToken = tokenManager.generateRefreshToken(user.id)
-        AuthResponse(accessToken, refreshToken, user)
+    override suspend fun register(request: AuthRequest): Either<IError, AuthResponse> = either {
+        val (validLogin, validPassword) = AuthValidator.validateCredentials(
+            request.login,
+            request.password
+        ).bind()
+
+        val existingUser = userRepository.findByLogin(validLogin)
+        ensure(existingUser == null) { IError.Auth.UserAlreadyExists(validLogin) }
+
+        val user = userRepository.createUser(validLogin, validPassword)
+        val accessToken = tokenManager.generateAccessToken(user.id.toString(), user.login)
+        val refreshToken = tokenManager.generateRefreshToken(user.id.toString())
+        AuthResponse(accessToken, refreshToken, user.toDto())
     }
 
-    override suspend fun refresh(refreshToken: String): Either<AppError, AuthResponse> = either {
+    override suspend fun refresh(refreshToken: String): Either<IError, AuthResponse> = either {
         val userId = tokenManager.verifyRefreshToken(refreshToken)
-        ensureNotNull(userId) { AppError.Server.Auth.InvalidToken() }
+        ensureNotNull(userId) { IError.Auth.InvalidToken() }
 
         val user = userRepository.findById(userId)
-        ensureNotNull(user) { AppError.Server.Auth.InvalidToken() }
+        ensureNotNull(user) { IError.Auth.InvalidToken() }
 
         val newAccess = tokenManager.generateAccessToken(user.id.toString(), user.login)
         val newRefresh = tokenManager.generateRefreshToken(user.id.toString())

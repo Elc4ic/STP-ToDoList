@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import arrow.core.Either
 import arrow.core.Option
 import dto.UserDto
-import errors.AppError
+import errors.IError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -23,7 +23,7 @@ interface TokenStore {
         user: UserDto,
         access: String,
         refresh: String
-    ): Either<AppError, Preferences>
+    ): Either<IError, Preferences>
 
     suspend fun clear()
 }
@@ -56,7 +56,7 @@ class DataStoreTokenStore(private val context: Context) : TokenStore {
             it[accessTokenKey] = access
             it[refreshTokenKey] = refresh
         }
-    }.mapLeft { AppError.Client.Auth.CannotSaveToken() }
+    }.mapLeft { IError.Auth.CannotSaveToken() }
 
     override suspend fun clear() {
         context.dataStore.edit { it.clear() }

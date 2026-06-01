@@ -6,19 +6,16 @@ import arrow.core.Option
 import arrow.core.raise.either
 import dev.stp.app.data.datasource.TokenStore
 import dev.stp.app.data.localDB.TaskDao
-import dev.stp.app.data.mapper.safeApiCall
 import dev.stp.app.domain.repository.AuthRepository
 import dto.AuthRequest
 import dto.AuthResponse
 import dto.UserDto
-import errors.AppError
+import errors.IError
+import errors.safeRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 
 class AuthRepositoryImpl(
@@ -27,16 +24,13 @@ class AuthRepositoryImpl(
     private val tokenStore: TokenStore
 ) : AuthRepository {
 
-    override suspend fun login(login: String, password: String): Either<AppError, UserDto> =
+    override suspend fun login(login: String, password: String): Either<IError, UserDto> =
         either {
-            val response = safeApiCall<AuthResponse>(
+            val response = client.safeRequest<AuthResponse>(
                 call = {
-                    client.post(Api.Auth.Login.url()) {
+                    post(Api.Auth.Login.url()) {
                         setBody(AuthRequest(login, password))
                     }
-                },
-                mapError = { status ->
-                    if (status == HttpStatusCode.NotFound) AppError.Server.Auth.UserNotFound() else null
                 }
             ).bind()
 
@@ -49,16 +43,13 @@ class AuthRepositoryImpl(
             response.user
         }
 
-    override suspend fun register(login: String, password: String): Either<AppError, UserDto> =
+    override suspend fun register(login: String, password: String): Either<IError, UserDto> =
         either {
-            val response = safeApiCall<AuthResponse>(
+            val response = client.safeRequest<AuthResponse>(
                 call = {
-                    client.post(Api.Auth.Register.url()) {
+                    post(Api.Auth.Register.url()) {
                         setBody(AuthRequest(login, password))
                     }
-                },
-                mapError = { status ->
-                    if (status == HttpStatusCode.NotFound) AppError.Server.Auth.UserNotFound() else null
                 }
             ).bind()
 

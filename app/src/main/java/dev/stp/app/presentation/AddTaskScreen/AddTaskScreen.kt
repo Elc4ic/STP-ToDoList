@@ -2,8 +2,6 @@
 
 package dev.stp.app.presentation.AddTaskScreen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,17 +34,16 @@ import androidx.compose.ui.unit.sp
 import dev.stp.app.data.mapper.DateFormater.formatDateFromMillis
 import dev.stp.app.data.mapper.SelectedDateField
 import dev.stp.app.presentation.components.AppButton
+import dev.stp.app.presentation.components.AppTextField
 import dev.stp.app.presentation.components.DateField
 import dev.stp.app.presentation.components.TaskDatePickerDialog
-import dev.stp.app.presentation.components.AppTextField
 import org.koin.androidx.compose.koinViewModel
-import ru.dedmos.todo.presentation.AddTaskScreen.AddScreenState
-import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskViewModel
 import ru.dedmos.todo.presentation.AddTaskScreen.AddCommands
 import ru.dedmos.todo.presentation.AddTaskScreen.AddScreenEvent
+import ru.dedmos.todo.presentation.AddTaskScreen.AddScreenState
+import ru.dedmos.todo.presentation.AddTaskScreen.AddTaskViewModel
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddTaskScreen(
     modifier: Modifier = Modifier,
