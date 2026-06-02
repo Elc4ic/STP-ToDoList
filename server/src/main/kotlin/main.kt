@@ -8,6 +8,6 @@ fun main(args: Array<String>) {
         factory = io.ktor.server.cio.CIO,
         port = 8080,
         host = "0.0.0.0",
-        module = Application::rootModule
+        module = Application::module
     ).start(wait = true)
 }
